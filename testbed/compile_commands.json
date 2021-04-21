@@ -1,0 +1,16 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/clang-11",
+      "-c",
+      "-I../octal/src/",
+      "-Isrc",
+      "-o",
+      "build/main.o",
+      "src/main.cpp"
+    ],
+    "directory": "/home/xenone/docs/code/octal/testbed",
+    "file": "/home/xenone/docs/code/octal/testbed/src/main.cpp",
+    "output": "/home/xenone/docs/code/octal/testbed/build/main.o"
+  }
+]
