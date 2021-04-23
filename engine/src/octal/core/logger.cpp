@@ -1,5 +1,5 @@
-#include "core/logger.h"
-#include "core/asserts.h"
+#include "octal/core/logger.h"
+#include "octal/core/asserts.h"
 #include "platform/platform.h"
 
 // TODO: remove

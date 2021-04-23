@@ -1,0 +1,28 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/clang-11",
+      "-c",
+      "-I./src/",
+      "-o",
+      "obj/logger.o",
+      "src/octal/core/logger.cpp"
+    ],
+    "directory": "/home/xenone/docs/code/octal/engine",
+    "file": "/home/xenone/docs/code/octal/engine/src/octal/core/logger.cpp",
+    "output": "/home/xenone/docs/code/octal/engine/obj/logger.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang-11",
+      "-c",
+      "-I./src/",
+      "-o",
+      "obj/linux.o",
+      "src/platform/linux/linux.cpp"
+    ],
+    "directory": "/home/xenone/docs/code/octal/engine",
+    "file": "/home/xenone/docs/code/octal/engine/src/platform/linux/linux.cpp",
+    "output": "/home/xenone/docs/code/octal/engine/obj/linux.o"
+  }
+]

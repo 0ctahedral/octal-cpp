@@ -2,7 +2,7 @@ src=$(shell find ./src \( -name \*.cpp \) -print)
 obj=$(src:%.cpp=%.o)
 obj_dir=obj
 obj_files=$(foreach f,$(obj), $(obj_dir)/$(notdir $f))
-inc=-I../octal/src/ -Isrc 
+inc=-I../engine/src/ -Isrc 
 targ=testbed
 cflags=-g -fdeclspec -fPIC
 ldflags=-L../bin/ -loctal -Wl,-rpath,\$$ORIGIN

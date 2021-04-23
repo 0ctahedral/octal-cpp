@@ -1,5 +1,5 @@
-#include <core/logger.h>
-#include <core/asserts.h>
+#include <octal/core/logger.h>
+#include <octal/core/asserts.h>
 
 int main() {
   FATAL("this is a %f", 3.14);
