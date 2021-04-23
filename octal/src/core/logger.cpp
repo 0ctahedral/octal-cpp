@@ -1,5 +1,6 @@
 #include "core/logger.h"
 #include "core/asserts.h"
+#include "platform/platform.h"
 
 // TODO: remove
 #include <cstdio>
@@ -46,8 +47,7 @@ namespace octal {
     sprintf(out_buff, "%s%s\n", lvl_string[lvl], out_msg);
 
     // TODO: platform specific
-    //fprintf(stderr, "%s", out_buff);
-    printf("%s", out_buff);
+    Platform::WriteError(out_buff, lvl);
 
   }
 
