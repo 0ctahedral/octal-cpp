@@ -17,6 +17,6 @@ int main() {
 
   auto id3 = ecs.CreateEntity();
   DEBUG("id3: %d", id3);
-  auto id4 = ecs.CreateEntity();
-  DEBUG("id4: %d", id4);
+
+
 }

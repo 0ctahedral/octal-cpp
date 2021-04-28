@@ -26,6 +26,7 @@ namespace octal {
   /// Destroys and entity
   /// @param id of entity that we no longer need anymore
   void ECS::DestroyEntity(EntityId id) {
+    ASSERT(id < MAX_ENTITIES, "Invalid entity id given");
     // check if this entity has already been returned
     auto itr = std::find(m_EntityIds.begin(), m_EntityIds.end(), id);
     if (itr != m_EntityIds.end()) {
