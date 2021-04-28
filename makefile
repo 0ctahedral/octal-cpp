@@ -1,12 +1,8 @@
 .PHONY: clean
 
-all: engine testbed
-
-testbed: ./bin/testbed ./bin/
-	$(MAKE) -C ./testbed
-
-engine:
+all:
 	$(MAKE) -C ./engine
+	$(MAKE) -C ./testbed
 
 clean:
 	$(MAKE) -C ./testbed clean
