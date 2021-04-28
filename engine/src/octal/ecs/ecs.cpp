@@ -1,3 +1,4 @@
+#include "octal/defines.h"
 #include "octal/ecs/ecs.h"
 #include <algorithm>
 namespace octal {
@@ -38,4 +39,28 @@ namespace octal {
     // reduce number of living entities
     --m_LivingEntities;
   }
+
+
+  template<typename C, class... Args>
+  void ECS::AddComponent(EntityId id, Args&&... args) {
+
+  }
+
+  template<typename C>
+  void ECS::RemoveComponent(EntityId id) {
+
+  }
+
+  template<typename C>
+  Scope<CompStoreBase>& ECS::getComponentStore() {
+    u8 tid = IdGenerator<Component>::TypeId<C>();
+
+    // if the length of the comp storage vector is less than our id then that means we gotta add it
+    if (tid < m_CompStorage.size()) {
+      m_CompStorage.emplace_back(CreateUni<CompStore<C>>(MAX_ENTITIES));
+    }
+
+    return m_CompStorage[tid];
+  }
+
 }

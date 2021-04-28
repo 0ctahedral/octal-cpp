@@ -1,4 +1,5 @@
 #pragma once
+#include <memory>
 typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned int u32;
@@ -11,6 +12,28 @@ typedef signed long long i64;
 
 typedef float f32;
 typedef double f64;
+
+namespace octal {
+template<typename T>
+  /// Alias unique pointer to scope
+  using Scope = std::unique_ptr<T>;
+  template<typename T, typename ... Args>
+  /// Creates a unique reference to a resource
+  constexpr Scope<T> CreateUni(Args&& ... args)
+  {
+    return std::make_unique<T>(std::forward<Args>(args)...);
+  }
+
+  /// Alias shared pointer to ref
+  template<typename T>
+  using Ref = std::shared_ptr<T>;
+  template<typename T, typename ... Args>
+  /// Creates a shared reference to a resource
+  constexpr Ref<T> CreateRef(Args&& ... args)
+  {
+    return std::make_shared<T>(std::forward<Args>(args)...);
+  }
+}
 
 // compiler based assert
 #if defined(__clang__) || defined(__gcc__)
