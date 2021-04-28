@@ -41,12 +41,12 @@ namespace octal {
 
 
   void Platform::Write(const char* msg, u8 color) {
-    const char* colour_strings[] = {"0;41", "1;31", "1;33", "1;32", "1;34", "1;30"};
+    const char* colour_strings[] = {"0;41", "1;31", "1;33", "1;32", "1;34", "1;35"};
     fprintf(stdout, "\033[%sm%s\033[0m", colour_strings[color], msg);
   }
 
   void Platform::WriteError(const char* msg, u8 color) {
-    const char* colour_strings[] = {"0;41", "1;31", "1;33", "1;32", "1;34", "1;30"};
+    const char* colour_strings[] = {"0;41", "1;31", "1;33", "1;32", "1;34", "1;35"};
     fprintf(stderr, "\033[%sm%s\033[0m", colour_strings[color], msg);
   }
 
