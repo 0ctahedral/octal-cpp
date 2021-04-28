@@ -2,11 +2,11 @@
 
 all: engine testbed
 
-testbed: engine
-	$(MAKE) -C ./testbed all
+testbed: ./bin/testbed ./bin/
+	$(MAKE) -C ./testbed
 
 engine:
-	$(MAKE) -C ./engine all
+	$(MAKE) -C ./engine
 
 clean:
 	$(MAKE) -C ./testbed clean

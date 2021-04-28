@@ -9,5 +9,5 @@ int main() {
   DEBUG("this is a %f", 3.14);
   TRACE("this is a %f", 3.14);
 
-  ASSERT(false, "this should fail");
+  //ASSERT(false, "this should fail");
 }
