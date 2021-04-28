@@ -13,6 +13,7 @@ namespace octal {
 #define debugBreak() __builtin_debugtrap()
 #endif
 
+/// Printout and debug break if there the condition inside is not met
 #define ASSERT(expr, msg)                                     \
 {                                                             \
   if (expr) {                                                 \
@@ -22,6 +23,7 @@ namespace octal {
   }                                                           \
 }
 
+/// Printout and debug break if there the condition inside is not met (only in debug mode)
 #ifdef _DEBUG
 #define ASSERT_DEBUG_(expr, msg)                              \
 {                                                             \
