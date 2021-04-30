@@ -13,8 +13,8 @@ namespace octal {
 			/// @param h height of the window
 			static bool Init(std::string& title, i16 x, i16 y, i16 w, i16 h);
 
-			/// Stop the platform
-			static bool Stop();
+			/// Shutdown the platform
+			static bool Shutdown();
 
 			/// Get all events from the system
 			static bool Flush();

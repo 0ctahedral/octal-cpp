@@ -16,6 +16,8 @@ namespace octal {
     }
   }
 
-  Application::~Application() { }
+  Application::~Application() {
+    Platform::Shutdown();
+  }
 
 }

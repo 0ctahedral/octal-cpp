@@ -151,7 +151,7 @@ namespace octal {
     return true;
   }
 
-  bool Platform::Stop() {
+  bool Platform::Shutdown() {
     LinuxState* state = (LinuxState*) s_State;
     // turn autorepeat back on
     XAutoRepeatOn(state->display);

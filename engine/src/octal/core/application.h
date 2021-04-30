@@ -8,7 +8,7 @@ namespace octal {
   class Application {
     public:
       Application();
-      virtual ~Application();
+      ~Application();
       void Run();
     private:
       /// Struct to store configuration of new application
