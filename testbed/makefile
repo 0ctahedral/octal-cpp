@@ -6,7 +6,7 @@ bin_dir=../bin
 lib_dir=../lib
 inc=-I../engine/src/ -Isrc 
 targ=testbed
-cflags=-g
+cflags=-g -std=c++20
 ldflags=-L$(lib_dir) -loctal -Wl,-rpath,\$$ORIGIN/../lib
 defines="-D_DEBUG -DEXPORT"
 

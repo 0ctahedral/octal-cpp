@@ -1,8 +1,15 @@
 #include <octal/core/logger.h>
 #include <octal/core/asserts.h>
 #include <octal/ecs/ecs.h>
+#include <octal/ecs/compstore.h>
+
+struct dummy {
+  u8 a;
+  u8 b;
+};
 
 int main() {
+  /*
   octal::ECS ecs(3);
   auto id0 = ecs.CreateEntity();
   auto id1 = ecs.CreateEntity();
@@ -17,6 +24,11 @@ int main() {
 
   auto id3 = ecs.CreateEntity();
   DEBUG("id3: %d", id3);
+  */
+  dummy d { 0, 2};
 
+  octal::CompStore<dummy> cs(100);
+  cs.Add(1 , dummy{0, 4});
+  cs.Add(1, dummy{43, 4});
 
 }

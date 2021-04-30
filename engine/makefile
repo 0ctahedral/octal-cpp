@@ -5,7 +5,7 @@ obj_dir=obj
 obj_files=$(foreach f,$(obj), $(obj_dir)/$(notdir $f))
 inc=-I./src/
 targ=octal
-cflags=-g -fdeclspec -fPIC
+cflags=-g -fdeclspec -fPIC -std=c++20
 ldflags=-lc -ldl
 defines="-D_DEBUG -DEXPORT"
 
