@@ -81,6 +81,7 @@ namespace octal {
     u16 w = 1200;
     u16 h = 1200;
     char app_name[] = "Octal";
+
     // Create the window
     xcb_void_cookie_t cookie = xcb_create_window(
         state->connection,
@@ -108,29 +109,30 @@ namespace octal {
         strlen(app_name),
         app_name);
 
-    // Tell the server to notify when the window manager
-    // attempts to destroy the window.
-    xcb_intern_atom_cookie_t wm_delete_cookie = xcb_intern_atom(
-        state->connection,
-        0,
-        strlen("WM_DELETE_WINDOW"),
-        "WM_DELETE_WINDOW");
-    xcb_intern_atom_cookie_t wm_protocols_cookie = xcb_intern_atom(
-        state->connection,
-        0,
-        strlen("WM_PROTOCOLS"),
-        "WM_PROTOCOLS");
+    // Notify us when the window manager wants to delete the window
     xcb_intern_atom_reply_t* wm_delete_reply = xcb_intern_atom_reply(
         state->connection,
-        wm_delete_cookie,
-        NULL);
+        xcb_intern_atom(
+          state->connection,
+          0,
+          strlen("WM_DELETE_WINDOW"),
+          "WM_DELETE_WINDOW"),
+        nullptr);
+
     xcb_intern_atom_reply_t* wm_protocols_reply = xcb_intern_atom_reply(
         state->connection,
-        wm_protocols_cookie,
-        NULL);
+        xcb_intern_atom(
+          state->connection,
+          0,
+          strlen("WM_PROTOCOLS"),
+          "WM_PROTOCOLS"),
+        nullptr);
+
+    // store the atoms
     state->wm_delete_win = wm_delete_reply->atom;
     state->wm_protocols = wm_protocols_reply->atom;
 
+    // ask the sever to actually set the atom
     xcb_change_property(
         state->connection,
         XCB_PROP_MODE_REPLACE,
@@ -144,7 +146,7 @@ namespace octal {
     // Map the window to the screen
     xcb_map_window(state->connection, state->window);
 
-    // Flush the stream
+    // flush pending actions to the server
     if (xcb_flush(state->connection) <= 0) {
         FATAL("An error occurred when flusing the stream");
         return false;
