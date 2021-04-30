@@ -4,7 +4,6 @@
 namespace octal {
 
 	class Platform {
-
 		public:
 			/// Start the platform
 			static bool Init();
@@ -40,7 +39,6 @@ namespace octal {
 			/// @param size of the block
 			static void* MemCopy(void* dest, const void* source, u64 size);
 
-
 			/// Write to the platform's console
 			/// @param msg text to print
 			/// @param color of the text
@@ -60,5 +58,9 @@ namespace octal {
 			/// Sleep main thread
 			/// @param ms amount of time to sleep in ms
 			static void Sleep(u64 ms);
+    private:
+      /// State held by the platform
+      static void* s_State;
 	};
+
 }

@@ -10,8 +10,10 @@ ldflags=-lc -ldl
 defines="-D_DEBUG -DEXPORT"
 
 # defines for platform
-# if linux
 platform=linux
+ifeq ($(platform), linux)
+	plat_flags=-lvulkan -lxcb -lX11 -lX11-xcb
+endif
 
 .PHONY:
 	clean
@@ -23,7 +25,7 @@ clean:
 	rm -rf $(lib_dir)/*.so
 
 engine: $(obj) $(platform)
-	clang++ -o $(lib_dir)/lib$(targ).so $(obj_dir)/*.o -shared $(cflags) $(defines) $(ldflags) 
+	clang++ -o $(lib_dir)/lib$(targ).so $(obj_dir)/*.o -shared $(cflags) $(defines) $(ldflags) $(plat_flags)
 
 linux:
 	clang++ -c src/platform/linux/linux.cpp -o $(obj_dir)/$@.o $(inc) $(cflags)

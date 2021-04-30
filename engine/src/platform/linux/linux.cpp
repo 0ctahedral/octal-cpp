@@ -1,22 +1,218 @@
+#include "octal/core/logger.h"
 #include "platform/platform.h"
+#include <thread>
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
+#include <X11/Xlib-xcb.h>
+#include <X11/Xlib.h>
+#include <xcb/xcb.h>
 
 namespace octal {
+  struct LinuxState {
+    /// Display
+    Display *display;
+    /// Pointer to the xcb connection
+    xcb_connection_t* connection;
+    /// Window we are drawing on
+    xcb_window_t window;
+    /// Screen the window is in
+    xcb_screen_t* screen;
+    /// Atom to store our protocol list
+    xcb_atom_t wm_protocols;
+    /// Atom to notify us when the window is deleted
+    xcb_atom_t wm_delete_win;
+  };
+
+  // Initialize statue to null
+  void* Platform::s_State = nullptr;
+
   bool Platform::Init() {
+    //TODO: setup new and free to use our platform
+
+    // intialize state
+    s_State = new LinuxState{};
+    // make things a little easier to do
+    LinuxState* state = (LinuxState*) s_State;
+
+    state->display = XOpenDisplay(nullptr);
+    XAutoRepeatOff(state->display);
+
+    state->connection = XGetXCBConnection(state->display);
+    // check for connection error
+    if (xcb_connection_has_error(state->connection)) {
+      FATAL("Cannot connect to x server with xcb");
+      return false;
+    }
+    
+
+    // Get the setup for the screen
+    const struct xcb_setup_t* setup = xcb_get_setup(state->connection);
+
+    // Loop through screens using iterator
+    xcb_screen_iterator_t it = xcb_setup_roots_iterator(setup);
+    int screen_p = 0;
+    for (i32 s = screen_p; s > 0; s--) {
+        xcb_screen_next(&it);
+    }
+
+    // Use the last screen
+    state->screen = it.data;
+
+    // Allocate an id for our window
+    state->window = xcb_generate_id(state->connection);
+
+    // We are setting the background pixel color and the event mask
+    u32 mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
+
+    // Request key and mouse events
+    //u32 events = ;
+
+    // background color and events to request
+    u32 values[] = {state->screen->black_pixel, XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE |
+                       XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE |
+                       XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_POINTER_MOTION |
+                       XCB_EVENT_MASK_STRUCTURE_NOTIFY};
+
+    // TODO: set these through api
+    i16 x = 100;
+    i16 y = 100;
+    u16 w = 1200;
+    u16 h = 1200;
+    char app_name[] = "Octal";
+    // Create the window
+    xcb_void_cookie_t cookie = xcb_create_window(
+        state->connection,
+        XCB_COPY_FROM_PARENT,
+        state->window,
+        state->screen->root,
+        x,
+        y,
+        w,
+        h,
+        0,
+        XCB_WINDOW_CLASS_INPUT_OUTPUT,
+        state->screen->root_visual,
+        mask,
+        values);
+
+    // Change the title
+    xcb_change_property(
+        state->connection,
+        XCB_PROP_MODE_REPLACE,
+        state->window,
+        XCB_ATOM_WM_NAME,
+        XCB_ATOM_STRING,
+        8,  // data should be viewed 8 bits at a time
+        strlen(app_name),
+        app_name);
+
+    // Tell the server to notify when the window manager
+    // attempts to destroy the window.
+    xcb_intern_atom_cookie_t wm_delete_cookie = xcb_intern_atom(
+        state->connection,
+        0,
+        strlen("WM_DELETE_WINDOW"),
+        "WM_DELETE_WINDOW");
+    xcb_intern_atom_cookie_t wm_protocols_cookie = xcb_intern_atom(
+        state->connection,
+        0,
+        strlen("WM_PROTOCOLS"),
+        "WM_PROTOCOLS");
+    xcb_intern_atom_reply_t* wm_delete_reply = xcb_intern_atom_reply(
+        state->connection,
+        wm_delete_cookie,
+        NULL);
+    xcb_intern_atom_reply_t* wm_protocols_reply = xcb_intern_atom_reply(
+        state->connection,
+        wm_protocols_cookie,
+        NULL);
+    state->wm_delete_win = wm_delete_reply->atom;
+    state->wm_protocols = wm_protocols_reply->atom;
+
+    xcb_change_property(
+        state->connection,
+        XCB_PROP_MODE_REPLACE,
+        state->window,
+        wm_protocols_reply->atom,
+        4,
+        32,
+        1,
+        &wm_delete_reply->atom);
+
+    // Map the window to the screen
+    xcb_map_window(state->connection, state->window);
+
+    // Flush the stream
+    if (xcb_flush(state->connection) <= 0) {
+        FATAL("An error occurred when flusing the stream");
+        return false;
+    }
 
     return true;
   }
 
   bool Platform::Stop() {
+    LinuxState* state = (LinuxState*) s_State;
+    // turn autorepeat back on
+    XAutoRepeatOn(state->display);
+    // delete our window
+    xcb_destroy_window(state->connection, state->window);
     return true;
   }
 
   bool Platform::Flush() {
-    bool quit;
+    bool should_quit = false;
+    LinuxState* state = (LinuxState*)s_State;
 
-    return !quit;
+    xcb_generic_event_t* event;
+    xcb_client_message_event_t* cm;
+
+    // Poll for events until null is returned.
+    while (true) {
+        event = xcb_poll_for_event(state->connection);
+        if (event == 0) {
+            break;
+        }
+
+        // Input events
+        switch (event->response_type & ~0x80) {
+            case XCB_KEY_PRESS:
+            case XCB_KEY_RELEASE: {
+                // TODO: Key presses and releases
+                INFO("keypress");
+            } break;
+            case XCB_BUTTON_PRESS:
+            case XCB_BUTTON_RELEASE: {
+                // TODO: Mouse button presses and releases
+                INFO("button press");
+            } break;
+            case XCB_MOTION_NOTIFY: {
+                // TODO: mouse movement
+                INFO("mouse moved");
+            } break;
+            case XCB_CONFIGURE_NOTIFY: {
+                // TODO: Resizing
+                INFO("window resized");
+            } break;
+
+            case XCB_CLIENT_MESSAGE: {
+                cm = (xcb_client_message_event_t*)event;
+                // Window close
+                if (cm->data.data32[0] == state->wm_delete_win) {
+                    should_quit = true;
+                }
+            } break;
+            default:
+                // Something else
+                break;
+        }
+
+      xcb_flush(state->connection);
+        free(event);
+    }
+    return !should_quit;
   }
 
   void* Platform::Allocate(u64 size, bool aligned) {
@@ -55,6 +251,6 @@ namespace octal {
   }
 
   void Platform::Sleep(u64 ms) {
-
+    std::this_thread::sleep_for(std::chrono::milliseconds(ms));
   }
 }

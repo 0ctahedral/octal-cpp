@@ -1,34 +1,17 @@
+#include <thread>
 #include <octal/core/logger.h>
+#include <platform/platform.h>
 #include <octal/core/asserts.h>
 #include <octal/ecs/ecs.h>
 #include <octal/ecs/compstore.h>
 
-struct dummy {
-  u8 a;
-  u8 b;
-};
-
 int main() {
-  /*
-  octal::ECS ecs(3);
-  auto id0 = ecs.CreateEntity();
-  auto id1 = ecs.CreateEntity();
-  auto id2 = ecs.CreateEntity();
-
-  DEBUG("id0: %d", id0);
-  DEBUG("id1: %d", id1);
-  DEBUG("id2: %d", id2);
-
-
-  ecs.DestroyEntity(id1);
-
-  auto id3 = ecs.CreateEntity();
-  DEBUG("id3: %d", id3);
-  */
-  dummy d { 0, 2};
-
-  octal::CompStore<dummy> cs(100);
-  cs.Add(1 , dummy{0, 4});
-  cs.Add(1, dummy{43, 4});
-
+  octal::Platform::Init();
+  bool quit = false;
+  while (!quit) {
+    if (!octal::Platform::Flush()) {
+      quit = true;
+    }
+  }
+  octal::Platform::Stop();
 }

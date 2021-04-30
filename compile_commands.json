@@ -1,0 +1,82 @@
+[
+    {
+        "arguments": [
+            "clang++",
+            "-c",
+            "-fPIC",
+            "-I./src/",
+            "-g",
+            "-fdeclspec",
+            "-fPIC",
+            "-std=c++20",
+            "-o",
+            "obj/compstore.o",
+            "src/octal/ecs/compstore.cpp"
+        ],
+        "directory": "/home/oct/code/octal/engine",
+        "file": "src/octal/ecs/compstore.cpp"
+    },
+    {
+        "arguments": [
+            "clang++",
+            "-c",
+            "-I../engine/src/",
+            "-Isrc",
+            "-o",
+            "obj/main.o",
+            "src/main.cpp"
+        ],
+        "directory": "/home/oct/code/octal/testbed",
+        "file": "src/main.cpp"
+    },
+    {
+        "arguments": [
+            "clang++",
+            "-c",
+            "-fPIC",
+            "-I./src/",
+            "-g",
+            "-fdeclspec",
+            "-fPIC",
+            "-std=c++20",
+            "-o",
+            "obj/ecs.o",
+            "src/octal/ecs/ecs.cpp"
+        ],
+        "directory": "/home/oct/code/octal/engine",
+        "file": "src/octal/ecs/ecs.cpp"
+    },
+    {
+        "arguments": [
+            "clang++",
+            "-c",
+            "-I./src/",
+            "-g",
+            "-fdeclspec",
+            "-fPIC",
+            "-std=c++20",
+            "-o",
+            "obj/linux.o",
+            "src/platform/linux/linux.cpp"
+        ],
+        "directory": "/home/oct/code/octal/engine",
+        "file": "src/platform/linux/linux.cpp"
+    },
+    {
+        "arguments": [
+            "clang++",
+            "-c",
+            "-fPIC",
+            "-I./src/",
+            "-g",
+            "-fdeclspec",
+            "-fPIC",
+            "-std=c++20",
+            "-o",
+            "obj/logger.o",
+            "src/octal/core/logger.cpp"
+        ],
+        "directory": "/home/oct/code/octal/engine",
+        "file": "src/octal/core/logger.cpp"
+    }
+]
