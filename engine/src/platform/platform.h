@@ -6,7 +6,12 @@ namespace octal {
 	class Platform {
 		public:
 			/// Start the platform
-			static bool Init();
+			/// @param title to put on application window
+			/// @param x position of the window
+			/// @param y position of the window
+			/// @param w width of the window
+			/// @param h height of the window
+			static bool Init(std::string& title, i16 x, i16 y, i16 w, i16 h);
 
 			/// Stop the platform
 			static bool Stop();

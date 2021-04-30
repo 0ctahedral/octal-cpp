@@ -28,7 +28,7 @@ namespace octal {
   // Initialize statue to null
   void* Platform::s_State = nullptr;
 
-  bool Platform::Init() {
+  bool Platform::Init(std::string& title, i16 x, i16 y, i16 w, i16 h) {
     //TODO: setup new and free to use our platform
 
     // intialize state
@@ -76,10 +76,6 @@ namespace octal {
                        XCB_EVENT_MASK_STRUCTURE_NOTIFY};
 
     // TODO: set these through api
-    i16 x = 100;
-    i16 y = 100;
-    u16 w = 1200;
-    u16 h = 1200;
     char app_name[] = "Octal";
 
     // Create the window
