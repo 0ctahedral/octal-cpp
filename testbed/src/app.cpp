@@ -3,8 +3,8 @@
 
 class Test : public octal::Application {
   public:
-    Test():
-      octal::Application()
+    Test(octal::Application::Config conf):
+      octal::Application(conf)
       {
 
       }
@@ -13,5 +13,9 @@ class Test : public octal::Application {
 };
 
 octal::Application* octal::CreateApplication() {
-  return new Test;
+  return new Test({
+      0, 0,
+      1280, 920,
+      "Testbed"
+      });
 }

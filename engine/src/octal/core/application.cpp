@@ -3,8 +3,11 @@
 
 namespace octal {
 
-  Application::Application() { 
-    Platform::Init(m_Config.name, m_Config.x, m_Config.y, m_Config.width, m_Config.height);
+  Application::Application(Config config) { 
+    // set state
+    m_State.width = config.width;
+    // start up window
+    Platform::Init(config.name, config.x, config.y, config.width, config.height);
   }
 
   void Application::Run() {
