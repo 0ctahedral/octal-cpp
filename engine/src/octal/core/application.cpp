@@ -12,6 +12,7 @@ namespace octal {
 
   void Application::Run() {
     bool quit = false;
+    // main loop
     while (!quit) {
       if (!Platform::Flush()) {
         quit = true;

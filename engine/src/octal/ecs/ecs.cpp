@@ -3,11 +3,12 @@
 #include <algorithm>
 namespace octal {
 
-  ECS::ECS(EntityId max)
-    : MAX_ENTITIES(max), m_LivingEntities(0)
+  ECS::ECS()
+    :m_LivingEntities(0)
   { 
     // populate the queue
-    for (int i = 0; i < MAX_ENTITIES; ++i) {
+    // id of 0 is reserved for null
+    for (int i = 1; i < MAX_ENTITIES; ++i) {
       m_EntityIds.push_back(i);
     }
   };

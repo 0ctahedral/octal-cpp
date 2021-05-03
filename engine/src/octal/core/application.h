@@ -21,9 +21,14 @@ namespace octal {
         std::string name{"Test"};
       };
 
+      /// Create an application
+      /// @param config the parameters to configure our application
       Application(Config config);
+      /// Destructor
       ~Application();
+      /// Run the application
       void Run();
+
     private:
 
       struct AppState {

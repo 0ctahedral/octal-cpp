@@ -1,4 +1,4 @@
-#include <thread>
+#include <octal/core/logger.h>
 #include <octal/core/application.h>
 
 class Test : public octal::Application {
@@ -6,7 +6,7 @@ class Test : public octal::Application {
     Test(octal::Application::Config conf):
       octal::Application(conf)
       {
-
+        // add layers and stuff
       }
 
     ~Test(){}

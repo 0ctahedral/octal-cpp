@@ -19,7 +19,7 @@ template<typename T>
   using Scope = std::unique_ptr<T>;
   template<typename T, typename ... Args>
   /// Creates a unique reference to a resource
-  constexpr Scope<T> CreateUni(Args&& ... args)
+  constexpr Scope<T> CreateScope(Args&& ... args)
   {
     return std::make_unique<T>(std::forward<Args>(args)...);
   }
@@ -109,3 +109,7 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes.");
 #define API
 #endif
 #endif
+
+
+/// Limit to the number of entities
+#define MAX_ENTITIES 5000

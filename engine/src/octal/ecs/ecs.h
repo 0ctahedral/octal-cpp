@@ -9,14 +9,13 @@
 #include <deque>
 #include <vector>
 
+
 namespace octal {
   /// Alias Entity id to integer for separation of types
   typedef u32 EntityId;
   /// Entity Component Manager
   class ECS {
     private:
-      /// Limit to the number of entities
-      const u32 MAX_ENTITIES;
 
       /// Stores ids of unused entities
       std::deque<EntityId> m_EntityIds;
@@ -30,7 +29,7 @@ namespace octal {
     public:
       /// Constructor
       /// @param max maximum number of entities in this system
-      ECS(u32 max = 5000);
+      ECS();
 
       /// Destructor
       ~ECS() {};
