@@ -2,8 +2,6 @@
 #include "octal/core/logger.h"
 #include "octal/core/application.h"
 #include "platform/platform.h"
-#include "octal/ecs/ecs.h"
-#include "octal/ecs/compstore.h"
 
 struct dummy {
   int a, b, c;
@@ -14,19 +12,6 @@ using namespace octal;
 extern octal::Application* octal::CreateApplication();
 
 int main(int argc, char** argv) {
-
-  ECS ecs;
-
-  u32 e1 = ecs.CreateEntity();
-  DEBUG("Created new entity: %d", e1);
-  {
-  ecs.AddComponent<dummy>(e1, {0, 1, 2});
-  auto c = ecs.GetComponent<dummy>(e1);
-  DEBUG("Entity %d has component dummy: a=%d, b=%d, c=%d", e1, c->a, c->b, c->c);
-  }
-  ecs.RemoveComponent<dummy>(e1);
-  auto c = ecs.GetComponent<dummy>(e1);
-  DEBUG("Entity %d has does not have component: %p", e1, c);
 
 	/*
 	// create user defined application

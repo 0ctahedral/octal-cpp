@@ -140,7 +140,6 @@ namespace octal {
           // if the length of the comp storage vector is less than our id then that means we gotta add it
           if (m_CompStorage.size() <= tid) {
             INFO("Adding component type %d", tid);
-            //m_CompStorage.emplace_back(CreateScope<CompStore<C>>());
             m_CompStorage.push_back(CreateScope<CompStore<C>>());
           }
 
