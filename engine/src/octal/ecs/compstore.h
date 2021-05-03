@@ -3,7 +3,6 @@
 #include "octal/core/logger.h"
 #include "octal/ecs/components.h"
 #include "platform/platform.h"
-#include <vector>
 
 namespace octal {
 

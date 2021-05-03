@@ -2,9 +2,10 @@
 #include "octal/core/logger.h"
 #include "octal/core/application.h"
 #include "platform/platform.h"
+#include "octal/ecs/ecs.h"
 #include "octal/ecs/compstore.h"
 
-struct testcomp {
+struct dummy {
   int a, b, c;
 };
 
@@ -13,20 +14,19 @@ using namespace octal;
 extern octal::Application* octal::CreateApplication();
 
 int main(int argc, char** argv) {
-  // test cs
-  CompStore<testcomp> cs;
 
-  cs.Add<testcomp>(1, {1, 2 ,3});
-  cs.Add<testcomp>(2, {4, 5, 6});
-  cs.Remove(1);
-  cs.Add<testcomp>(3, {1, 2 ,3});
+  ECS ecs;
 
-  printf("4 vs %d\n", cs.Get(2)->a);
-  if (auto comp = cs.Get(1)) {
-    printf("4 vs %d\n", comp->a);
-  } else {
-    printf("entity 1 does not have a component\n");
+  u32 e1 = ecs.CreateEntity();
+  DEBUG("Created new entity: %d", e1);
+  {
+  ecs.AddComponent<dummy>(e1, {0, 1, 2});
+  auto c = ecs.GetComponent<dummy>(e1);
+  DEBUG("Entity %d has component dummy: a=%d, b=%d, c=%d", e1, c->a, c->b, c->c);
   }
+  ecs.RemoveComponent<dummy>(e1);
+  auto c = ecs.GetComponent<dummy>(e1);
+  DEBUG("Entity %d has does not have component: %p", e1, c);
 
 	/*
 	// create user defined application
