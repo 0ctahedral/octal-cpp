@@ -1,4 +1,5 @@
 #include "octal/core/application.h"
+#include "octal/renderer/renderer.h"
 #include "platform/platform.h"
 
 namespace octal {
@@ -8,6 +9,9 @@ namespace octal {
     m_State.width = config.width;
     // start up window
     Platform::Init(config.name, config.x, config.y, config.width, config.height);
+
+    Renderer renderer;
+    renderer.Init();
   }
 
   void Application::Run() {
