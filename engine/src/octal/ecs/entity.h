@@ -20,9 +20,7 @@ namespace octal {
       /// Create an entity by giving an id
       /// This can only be called by the scene
       /// @param id to give thie entity
-      explicit Entity(u32 id) : m_id(id) {
-      
-      }
+      explicit Entity(u32 id, Scene* scene) : m_id(id), m_Scene(scene) { }
 
     public:
 
@@ -33,16 +31,19 @@ namespace octal {
         m_Scene->m_ecs.AddComponent<C>(m_id, std::forward<C>(args...));
       }
 
-      /// 
+      /// Removes component of type C from this entity
       template<typename C>
       void RemoveComponent() {
         m_Scene->m_ecs.RemoveComponent<C>(m_id);
       }
 
+      // TODO: should be a reference counted pointer
+      /// Gets a refernce to the component of type C on this entity
+      /// @returns a reference to the component
       template<typename C>
-        // TODO: should be a reference counted pointer
       C* GetComponent() {
         return m_Scene->m_ecs.GetComponent<C>(m_id);
       }
+
   };
 }

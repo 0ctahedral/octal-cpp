@@ -11,10 +11,14 @@ namespace octal {
       ECS m_ecs;
       
     public:
-      Scene();
-      ~Scene();
+      Scene() {};
+      ~Scene(){};
 
+      /// Creates a new entity in this scene
+      /// @return the new entity
       Entity CreateEntity();
+      
+      /// Destroys an entity
       void DestroyEntity(Entity e);
   };
 }
