@@ -25,8 +25,8 @@ namespace octal {
       VkInstance m_Instance;
       /// Create the instance
       bool createInstance();
-      std::vector<const char*> getRequiredExtensions();
-      std::vector<const char*> getValidationLayers();
+      bool hasValidationLayers();
+      bool validationEnabled = true;
   };
 
 }
