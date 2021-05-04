@@ -1,6 +1,7 @@
 #pragma once
 #include "octal/defines.h"
 #include <vulkan/vulkan.h>
+#include <vector>
 
 namespace octal {
 
@@ -24,6 +25,8 @@ namespace octal {
       VkInstance m_Instance;
       /// Create the instance
       bool createInstance();
+      std::vector<const char*> getRequiredExtensions();
+      std::vector<const char*> getValidationLayers();
   };
 
 }

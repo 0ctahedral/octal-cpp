@@ -1,3 +1,4 @@
+#include "octal/core/logger.h"
 #include "octal/core/application.h"
 #include "octal/renderer/renderer.h"
 #include "platform/platform.h"
@@ -11,7 +12,12 @@ namespace octal {
     Platform::Init(config.name, config.x, config.y, config.width, config.height);
 
     Renderer renderer;
-    renderer.Init();
+    if (!renderer.Init()) {
+      FATAL("Could not start vulkan :(");
+      Platform::Shutdown();
+      // bail out here?
+      exit(1);
+    }
   }
 
   void Application::Run() {
