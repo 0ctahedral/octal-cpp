@@ -1,5 +1,17 @@
 #include <octal/core/logger.h>
 #include <octal/core/application.h>
+#include <octal/core/layer.h>
+
+class TestLayer : public octal::Layer {
+
+  void OnPush() override {
+    DEBUG("Test layer pushed!");
+  }
+
+  void OnPop() override {
+    DEBUG("Test layer popped!");
+  }
+};
 
 class Test : public octal::Application {
   public:
@@ -7,9 +19,10 @@ class Test : public octal::Application {
       octal::Application(conf)
       {
         // add layers and stuff
+        m_LayerStack.PushLayer(new TestLayer);
       }
 
-    ~Test(){}
+    ~Test(){ }
 };
 
 octal::Application* octal::CreateApplication() {

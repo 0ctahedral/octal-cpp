@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include "octal/defines.h"
-#include "octal/defines.h"
+#include "octal/core/layer.h"
 
 namespace octal {
 
@@ -30,15 +30,25 @@ namespace octal {
       void Run();
 
     private:
-
+      /// Stores state for the application
       struct AppState {
+        /// Is the application running?
         bool is_running;
+        /// Is the application paused?
         bool is_suspended;
+        /// Current width of the application window
         i16 width;
+        /// Current height of the application window
         i16 height;
+        /// The time of the last frame of the application
         f64 last_time;
       };
+      /// This application's state
       AppState m_State;
+
+    protected:
+      /// The layers this application is storing
+      LayerStack m_LayerStack;
   };
 
   Application* CreateApplication();
