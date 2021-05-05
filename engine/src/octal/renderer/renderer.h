@@ -16,18 +16,21 @@ namespace octal {
   //TODO: Pimpl method or whatever
   /// A renderer. duh
   class Renderer {
-    /// Logical device we are using
-    VkDevice m_Device;
-    /// The physical device (graphics card) we are rendering with
-    VkPhysicalDevice m_PhysicalDev{VK_NULL_HANDLE};
-
-    /// Finds and picks the ideal physical device
-    bool pickPhysicalDevice(VkPhysicalDevice* pd);
     /// Our vulkan instance
     VkInstance m_Instance;
 
+    /// Logical device we are using
+    VkDevice m_Device;
+
+    /// The physical device (graphics card) we are rendering with
+    VkPhysicalDevice m_PhysicalDev{VK_NULL_HANDLE};
+
     /// Debug messenger for getting errors from vulkan
     VkDebugUtilsMessengerEXT m_Debugger;
+
+    VkQueue m_GraphicsQ;
+
+    QueueFamilyIndices m_QIndices;
 
     public:
       /// Constructor
@@ -50,6 +53,9 @@ namespace octal {
 
       /// Setup the debugger for vulkan
       bool setupDebugMesenger();
+
+      /// Finds and picks the ideal physical device
+      bool pickPhysicalDevice(VkPhysicalDevice* pd);
 
       /// Creates our logical device
       bool createLogicalDevice();

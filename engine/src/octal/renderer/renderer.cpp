@@ -19,6 +19,9 @@ namespace octal {
       return false;
     }
 
+    // get the device queue
+    vkGetDeviceQueue(m_Device, m_QIndices.graphicsFamily.value(), 0, &m_GraphicsQ);
+
     return true;
   }
 
@@ -182,9 +185,10 @@ namespace octal {
       // print out the devices cuz why not
       INFO("Device %s: type=%d", props.deviceName, props.deviceType);
 
+      m_QIndices = findQueueFamilies(dev);
       // TODO: select best device if we have more than one
       // ex: prefer descrete over integrated graphics
-      if (features.geometryShader && findQueueFamilies(dev).isComplete()) {
+      if (features.geometryShader && m_QIndices.isComplete()) {
         *pd = dev;
         return true;
       }
@@ -217,7 +221,7 @@ namespace octal {
     VkDeviceQueueCreateInfo queueCreate{};
     queueCreate.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     // set graphics index
-    queueCreate.queueFamilyIndex = findQueueFamilies(m_PhysicalDev).graphicsFamily.value();
+    queueCreate.queueFamilyIndex = m_QIndices.graphicsFamily.value();
     queueCreate.queueCount = 1;
     // make this the highest priority
     float priority = 1.f;
