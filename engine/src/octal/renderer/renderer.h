@@ -34,6 +34,12 @@ namespace octal {
       VkInstance m_Instance;
       /// Debug messenger for getting errors from vulkan
       VkDebugUtilsMessengerEXT m_Debugger;
+      /// function that is called by the debugger
+      static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+          VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+          VkDebugUtilsMessageTypeFlagsEXT msgType,
+          const VkDebugUtilsMessengerCallbackDataEXT* data,
+          void* userdata);
       /// Are the validation layers enabled? TODO: change this to using macros?
       bool validationEnabled = true;
   };

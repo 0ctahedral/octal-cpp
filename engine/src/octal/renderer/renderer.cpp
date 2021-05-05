@@ -82,6 +82,18 @@ namespace octal {
     if (hasValidationLayers() && validationEnabled) {
       create.enabledLayerCount = layerNames.size();
       create.ppEnabledLayerNames = layerNames.data();
+
+      // add debugging layers
+      VkDebugUtilsMessengerCreateInfoEXT debug{};
+      debug.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+      debug.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
+        | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
+        |VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+      debug.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
+        | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
+        |VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+      debug.pfnUserCallback = debugCallback;
+      create.pNext =(VkDebugUtilsMessengerCreateInfoEXT*) &debug;
     } else {
       create.enabledLayerCount = 0;
     }
@@ -95,13 +107,13 @@ namespace octal {
   }
 
   /// Callback for vulkan debugging
-  static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+  VKAPI_ATTR VkBool32 VKAPI_CALL Renderer::debugCallback(
       VkDebugUtilsMessageSeverityFlagBitsEXT severity,
       VkDebugUtilsMessageTypeFlagsEXT msgType,
       const VkDebugUtilsMessengerCallbackDataEXT* data,
       void* userdata) {
 
-    WARN("Vulkan error: %s", data->pMessage);
+    WARN("%s", data->pMessage);
 
     return VK_FALSE;
   }
