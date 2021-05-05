@@ -177,12 +177,31 @@ namespace octal {
 
       // TODO: select best device if we have more than one
       // ex: prefer descrete over integrated graphics
-      if (features.geometryShader) {
+      if (features.geometryShader && findQueueFamilies(dev).isComplete()) {
         *pd = dev;
         return true;
       }
     }
 
     return false; 
+  }
+
+
+  QueueFamilyIndices Renderer::findQueueFamilies(VkPhysicalDevice dev) {
+    QueueFamilyIndices indices;
+
+    u32 queueCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(dev, &queueCount, nullptr);
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueCount);
+
+    vkGetPhysicalDeviceQueueFamilyProperties(dev, &queueCount, queueFamilies.data());
+
+    for (u32 i = 0; i < queueCount; ++i) {
+      if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+        indices.graphicsFamily = i;
+      }
+    }
+
+    return indices;
   }
 }

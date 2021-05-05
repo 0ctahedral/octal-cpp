@@ -2,8 +2,16 @@
 #include "octal/defines.h"
 #include <vulkan/vulkan.h>
 #include <vector>
+#include <optional>
 
 namespace octal {
+  /// Struct for storing QueueFamilies
+  struct QueueFamilyIndices {
+    std::optional<u32> graphicsFamily;
+    bool isComplete() {
+      return graphicsFamily.has_value();
+    }
+  };
 
   //TODO: Pimpl method or whatever
   /// A renderer. duh
@@ -34,6 +42,9 @@ namespace octal {
       VkPhysicalDevice m_PhysicalDev{VK_NULL_HANDLE};
       /// Finds and picks the ideal physical device
       bool pickPhysicalDevice(VkPhysicalDevice* pd);
+
+      /// Fing queues
+      QueueFamilyIndices findQueueFamilies(VkPhysicalDevice dev);
 
       /// Our vulkan instance
       VkInstance m_Instance;
