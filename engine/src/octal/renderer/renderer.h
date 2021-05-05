@@ -16,6 +16,19 @@ namespace octal {
   //TODO: Pimpl method or whatever
   /// A renderer. duh
   class Renderer {
+    /// Logical device we are using
+    VkDevice m_Device;
+    /// The physical device (graphics card) we are rendering with
+    VkPhysicalDevice m_PhysicalDev{VK_NULL_HANDLE};
+
+    /// Finds and picks the ideal physical device
+    bool pickPhysicalDevice(VkPhysicalDevice* pd);
+    /// Our vulkan instance
+    VkInstance m_Instance;
+
+    /// Debug messenger for getting errors from vulkan
+    VkDebugUtilsMessengerEXT m_Debugger;
+
     public:
       /// Constructor
       Renderer() {};
@@ -38,18 +51,9 @@ namespace octal {
       /// Setup the debugger for vulkan
       bool setupDebugMesenger();
 
-      /// The physical device (graphics card) we are rendering with
-      VkPhysicalDevice m_PhysicalDev{VK_NULL_HANDLE};
-      /// Finds and picks the ideal physical device
-      bool pickPhysicalDevice(VkPhysicalDevice* pd);
+      /// Creates our logical device
+      bool createLogicalDevice();
 
-      /// Fing queues
-      QueueFamilyIndices findQueueFamilies(VkPhysicalDevice dev);
-
-      /// Our vulkan instance
-      VkInstance m_Instance;
-      /// Debug messenger for getting errors from vulkan
-      VkDebugUtilsMessengerEXT m_Debugger;
       /// function that is called by the debugger
       static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
           VkDebugUtilsMessageSeverityFlagBitsEXT severity,
@@ -58,6 +62,10 @@ namespace octal {
           void* userdata);
       /// Are the validation layers enabled? TODO: change this to using macros?
       bool validationEnabled = true;
+
+      /// Find queues available for our use
+      QueueFamilyIndices findQueueFamilies(VkPhysicalDevice dev);
+
   };
 
 }

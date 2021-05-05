@@ -14,10 +14,17 @@ namespace octal {
       FATAL("Failed to find suitable physical device");
       return false;
     }
+    if (!createLogicalDevice()) {
+      FATAL("Failed to create logical device");
+      return false;
+    }
+
     return true;
   }
 
   void Renderer::Shutdown() {
+    // destroy the logical device
+    vkDestroyDevice(m_Device, nullptr);
     // shutdown the debugger
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)
       vkGetInstanceProcAddr(m_Instance, "vkDestroyDebugUtilsMessengerEXT");
@@ -204,4 +211,42 @@ namespace octal {
 
     return indices;
   }
+
+  bool Renderer::createLogicalDevice() {
+    // creates the device queue
+    VkDeviceQueueCreateInfo queueCreate{};
+    queueCreate.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    // set graphics index
+    queueCreate.queueFamilyIndex = findQueueFamilies(m_PhysicalDev).graphicsFamily.value();
+    queueCreate.queueCount = 1;
+    // make this the highest priority
+    float priority = 1.f;
+    queueCreate.pQueuePriorities = &priority;
+
+    // device features we want
+    // don't need to do anything with it yet
+    VkPhysicalDeviceFeatures features{};
+
+    // create the device
+    VkDeviceCreateInfo devCreate{};
+    devCreate.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    devCreate.pQueueCreateInfos = &queueCreate;
+    devCreate.queueCreateInfoCount = 1;
+    devCreate.pEnabledFeatures = &features;
+    // no extensions for now
+    devCreate.enabledExtensionCount = 0;
+    devCreate.ppEnabledExtensionNames = nullptr;
+
+    std::vector<const char*> layerNames = {"VK_LAYER_KHRONOS_validation"};
+    // add validation if we need to
+    if (validationEnabled) {
+      devCreate.enabledLayerCount = 1;
+      devCreate.ppEnabledLayerNames = layerNames.data();
+    } else {
+      devCreate.enabledLayerCount = 0;
+    }
+
+    return vkCreateDevice(m_PhysicalDev, &devCreate, nullptr, &m_Device) == VK_SUCCESS;
+  }
 }
+
