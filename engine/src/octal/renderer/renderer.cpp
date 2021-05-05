@@ -1,6 +1,7 @@
 #include "octal/renderer/renderer.h"
 #include "octal/core/logger.h"
 #include <cstring>
+#include <vulkan/vulkan_core.h>
 
 namespace octal {
   bool Renderer::Init() {
@@ -8,10 +9,19 @@ namespace octal {
       FATAL("Failed to create vk instance");
       return false;
     }
+    setupDebugMesenger();
     return true;
   }
 
   void Renderer::Shutdown() {
+    // shutdown the debugger
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)
+      vkGetInstanceProcAddr(m_Instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func == nullptr) {
+      ERROR("Could not find function 'vkDestroyDebugUtilsMessengerEXT'");
+    }
+    func(m_Instance, m_Debugger, nullptr);
+
     vkDestroyInstance(m_Instance, nullptr);
   }
 
@@ -54,6 +64,7 @@ namespace octal {
     std::vector<VkExtensionProperties> extensions(extCount);
     vkEnumerateInstanceExtensionProperties(nullptr, &extCount, extensions.data());
 
+    // TODO: limit this to only extensions we will need
     std::vector<const char*> extNames;
     // print and get names
     for (auto& ext : extensions) {
@@ -83,4 +94,38 @@ namespace octal {
     return (result == VK_SUCCESS);
   }
 
+  /// Callback for vulkan debugging
+  static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+      VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+      VkDebugUtilsMessageTypeFlagsEXT msgType,
+      const VkDebugUtilsMessengerCallbackDataEXT* data,
+      void* userdata) {
+
+    WARN("Vulkan error: %s", data->pMessage);
+
+    return VK_FALSE;
+  }
+
+  bool Renderer::setupDebugMesenger() {
+    VkDebugUtilsMessengerCreateInfoEXT create{};
+    create.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    create.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
+      | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
+      |VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    create.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
+      | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
+      |VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    create.pfnUserCallback = debugCallback;
+    // get the function to set this bad boy up
+    // it's an extension so we need to look it up
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT)
+      vkGetInstanceProcAddr(m_Instance, "vkCreateDebugUtilsMessengerEXT");
+
+    if (func == nullptr) {
+      ERROR("Could not find function 'vkCreateDebugUtilsMessengerEXT'");
+      return false;
+    }
+
+    return func(m_Instance, &create, nullptr, &m_Debugger) == VK_SUCCESS;
+  }
 }
