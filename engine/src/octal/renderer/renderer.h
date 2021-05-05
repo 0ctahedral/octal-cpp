@@ -30,6 +30,11 @@ namespace octal {
       /// Setup the debugger for vulkan
       bool setupDebugMesenger();
 
+      /// The physical device (graphics card) we are rendering with
+      VkPhysicalDevice m_PhysicalDev{VK_NULL_HANDLE};
+      /// Finds and picks the ideal physical device
+      bool pickPhysicalDevice(VkPhysicalDevice* pd);
+
       /// Our vulkan instance
       VkInstance m_Instance;
       /// Debug messenger for getting errors from vulkan

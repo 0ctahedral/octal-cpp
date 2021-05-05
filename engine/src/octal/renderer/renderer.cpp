@@ -10,6 +10,10 @@ namespace octal {
       return false;
     }
     setupDebugMesenger();
+    if (!pickPhysicalDevice(&m_PhysicalDev)) {
+      FATAL("Failed to find suitable physical device");
+      return false;
+    }
     return true;
   }
 
@@ -121,8 +125,12 @@ namespace octal {
   bool Renderer::setupDebugMesenger() {
     VkDebugUtilsMessengerCreateInfoEXT create{};
     create.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    /*
     create.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
       | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
+      |VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    */
+    create.messageSeverity =  VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
       |VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
     create.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT
       | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
@@ -139,5 +147,42 @@ namespace octal {
     }
 
     return func(m_Instance, &create, nullptr, &m_Debugger) == VK_SUCCESS;
+  }
+
+
+  // TODO: take in a list of requirements
+  bool Renderer::pickPhysicalDevice(VkPhysicalDevice* pd) {
+    // get how many devices we have
+    u32 deviceCount = 0;
+    vkEnumeratePhysicalDevices(m_Instance, &deviceCount, nullptr);
+
+    if (deviceCount == 0) {
+      FATAL("Could not find any physical devices :(");
+      return false;
+    }
+
+    // create and populate vector of devices
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(m_Instance, &deviceCount, devices.data());
+
+    // Check suitability of devices
+    for (auto& dev : devices) {
+      VkPhysicalDeviceProperties props;
+      vkGetPhysicalDeviceProperties(dev, &props);
+      VkPhysicalDeviceFeatures features;
+      vkGetPhysicalDeviceFeatures(dev, &features);
+
+      // print out the devices cuz why not
+      INFO("Device %s: type=%d", props.deviceName, props.deviceType);
+
+      // TODO: select best device if we have more than one
+      // ex: prefer descrete over integrated graphics
+      if (features.geometryShader) {
+        *pd = dev;
+        return true;
+      }
+    }
+
+    return false; 
   }
 }
