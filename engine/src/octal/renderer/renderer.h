@@ -7,9 +7,10 @@
 namespace octal {
   /// Struct for storing QueueFamilies
   struct QueueFamilyIndices {
-    std::optional<u32> graphicsFamily;
+    std::optional<u32> graphics;
+    std::optional<u32> present = 10;
     bool isComplete() {
-      return graphicsFamily.has_value();
+      return graphics.has_value() && present.has_value();
     }
   };
 
@@ -28,9 +29,14 @@ namespace octal {
     /// Debug messenger for getting errors from vulkan
     VkDebugUtilsMessengerEXT m_Debugger;
 
+    /// Graphics queue for our device
     VkQueue m_GraphicsQ;
 
+    /// Indices of the queues on the device
     QueueFamilyIndices m_QIndices;
+
+    /// The surface we are rendering to
+    VkSurfaceKHR m_Surface;
 
     public:
       /// Constructor
@@ -71,6 +77,9 @@ namespace octal {
 
       /// Find queues available for our use
       QueueFamilyIndices findQueueFamilies(VkPhysicalDevice dev);
+
+      /// Create the surface
+      bool createSurface();
 
   };
 

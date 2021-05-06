@@ -1,7 +1,10 @@
+#include "platform/platform.h"
+#include "platform/linux/linux.h"
 #include "octal/renderer/renderer.h"
 #include "octal/core/logger.h"
 #include <cstring>
 #include <vulkan/vulkan_core.h>
+#include <vulkan/vulkan_xcb.h>
 
 namespace octal {
   bool Renderer::Init() {
@@ -20,12 +23,19 @@ namespace octal {
     }
 
     // get the device queue
-    vkGetDeviceQueue(m_Device, m_QIndices.graphicsFamily.value(), 0, &m_GraphicsQ);
+    vkGetDeviceQueue(m_Device, m_QIndices.graphics.value(), 0, &m_GraphicsQ);
+
+
+    if (!createSurface()) {
+      FATAL("Failed to create surface");
+      return false;
+    }
 
     return true;
   }
 
   void Renderer::Shutdown() {
+    vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
     // destroy the logical device
     vkDestroyDevice(m_Device, nullptr);
     // shutdown the debugger
@@ -209,7 +219,7 @@ namespace octal {
 
     for (u32 i = 0; i < queueCount; ++i) {
       if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-        indices.graphicsFamily = i;
+        indices.graphics = i;
       }
     }
 
@@ -221,7 +231,7 @@ namespace octal {
     VkDeviceQueueCreateInfo queueCreate{};
     queueCreate.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     // set graphics index
-    queueCreate.queueFamilyIndex = m_QIndices.graphicsFamily.value();
+    queueCreate.queueFamilyIndex = m_QIndices.graphics.value();
     queueCreate.queueCount = 1;
     // make this the highest priority
     float priority = 1.f;
@@ -251,6 +261,18 @@ namespace octal {
     }
 
     return vkCreateDevice(m_PhysicalDev, &devCreate, nullptr, &m_Device) == VK_SUCCESS;
+  }
+
+
+  bool Renderer::createSurface() {
+    LinuxState* ls = (LinuxState*) Platform::s_State;
+    // TODO: make this platform independent
+    VkXcbSurfaceCreateInfoKHR create{};
+    create.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
+    create.connection = ls->connection;
+    create.window = ls->window;
+
+    return vkCreateXcbSurfaceKHR(m_Instance, &create, nullptr, &m_Surface) == VK_SUCCESS;
   }
 }
 

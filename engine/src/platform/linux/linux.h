@@ -1,32 +1,23 @@
 #pragma once
-#include "platorm/platform.h"
+#include "platform/platform.h"
+#include <X11/Xlib-xcb.h>
+#include <X11/Xlib.h>
+#include <xcb/xcb.h>
 
 namespace octal {
-  class LinuxPlatform : Platform {
-    private:
-    public:
-      bool Init() override;
-
-      bool Stop() override;
-
-      bool Flush() override;
-
-      void* Allocate(u64 size, bool aligned) override;
-
-			void Free(void* block) override;
-
-      void* MemZero(void* block, u64 size) override;
-
-      void* MemSet(void* block, i32 value, u64 size) override;
-
-      void* MemCopy(void* dest, const void* source, u64 size) override;
-
-      void Write(const char* msg, u8 color) override;
-
-      void WriteError(const char* msg, u8 color) override;
-
-      f64 AbsoluteTime() override;
-
-      void Sleep(u64 ms) override;
+  struct LinuxState {
+    /// Display
+    Display *display;
+    /// Pointer to the xcb connection
+    xcb_connection_t* connection;
+    /// Window we are drawing on
+    xcb_window_t window;
+    /// Screen the window is in
+    xcb_screen_t* screen;
+    /// Atom to store our protocol list
+    xcb_atom_t wm_protocols;
+    /// Atom to notify us when the window is deleted
+    xcb_atom_t wm_delete_win;
   };
+
 }
