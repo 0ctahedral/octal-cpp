@@ -23,6 +23,10 @@ namespace octal {
     /// Logical device we are using
     VkDevice m_Device;
 
+    std::vector<const char*> m_DeviceExtensions = {
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
+
     /// The physical device (graphics card) we are rendering with
     VkPhysicalDevice m_PhysicalDev{VK_NULL_HANDLE};
 

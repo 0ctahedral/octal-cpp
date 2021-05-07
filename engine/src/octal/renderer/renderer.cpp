@@ -4,6 +4,7 @@
 #include "octal/core/logger.h"
 #include <cstring>
 #include <set>
+#include <string>
 #include <vulkan/vulkan_core.h>
 #include <vulkan/vulkan_xcb.h>
 
@@ -194,15 +195,20 @@ namespace octal {
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(m_Instance, &deviceCount, devices.data());
 
+
+    // TODO: make set of required extensions not hardcoded
+
+    std::set<std::string> requiredExt(m_DeviceExtensions.begin(), m_DeviceExtensions.end());
+
     // Check suitability of devices
     for (auto& dev : devices) {
-      VkPhysicalDeviceProperties props;
-      vkGetPhysicalDeviceProperties(dev, &props);
+      VkPhysicalDeviceProperties PDprops;
+      vkGetPhysicalDeviceProperties(dev, &PDprops);
       VkPhysicalDeviceFeatures features;
       vkGetPhysicalDeviceFeatures(dev, &features);
 
       // print out the devices cuz why not
-      INFO("Device %s: type=%d", props.deviceName, props.deviceType);
+      INFO("Device %s: type=%d", PDprops.deviceName, PDprops.deviceType);
 
       m_QIndices = findQueueFamilies(dev);
       // TODO: select best device if we have more than one
@@ -211,9 +217,20 @@ namespace octal {
         *pd = dev;
         return true;
       }
+
+      // check if the desired extensions are supported
+      u32 extCount;
+      vkEnumerateDeviceExtensionProperties(dev, nullptr, &extCount, nullptr);
+      std::vector<VkExtensionProperties> availExt(extCount);
+      vkEnumerateDeviceExtensionProperties(dev, nullptr, &extCount, availExt.data());
+
+
+      for (const auto& ext : availExt) {
+        requiredExt.erase(std::string(ext.extensionName));
+      }
     }
 
-    return false; 
+    return requiredExt.empty(); 
   }
 
 
@@ -271,8 +288,8 @@ namespace octal {
     devCreate.queueCreateInfoCount = queueCreateInfos.size();
     devCreate.pEnabledFeatures = &features;
     // no extensions for now
-    devCreate.enabledExtensionCount = 0;
-    devCreate.ppEnabledExtensionNames = nullptr;
+    devCreate.enabledExtensionCount = m_DeviceExtensions.size();
+    devCreate.ppEnabledExtensionNames = m_DeviceExtensions.data();
 
     std::vector<const char*> layerNames = {"VK_LAYER_KHRONOS_validation"};
     // add validation if we need to
