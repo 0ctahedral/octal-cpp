@@ -3,6 +3,7 @@
 #include "octal/renderer/renderer.h"
 #include "octal/core/logger.h"
 #include <cstring>
+#include <set>
 #include <vulkan/vulkan_core.h>
 #include <vulkan/vulkan_xcb.h>
 
@@ -12,7 +13,17 @@ namespace octal {
       FATAL("Failed to create vk instance");
       return false;
     }
-    setupDebugMesenger();
+
+    if (!setupDebugMesenger()) {
+      FATAL("Failed to setup debugger");
+      return false;
+    }
+
+    if (!createSurface()) {
+      FATAL("Failed to create surface");
+      return false;
+    }
+
     if (!pickPhysicalDevice(&m_PhysicalDev)) {
       FATAL("Failed to find suitable physical device");
       return false;
@@ -24,17 +35,15 @@ namespace octal {
 
     // get the device queue
     vkGetDeviceQueue(m_Device, m_QIndices.graphics.value(), 0, &m_GraphicsQ);
+    vkGetDeviceQueue(m_Device, m_QIndices.present.value(), 0, &m_PresentQ);
 
 
-    if (!createSurface()) {
-      FATAL("Failed to create surface");
-      return false;
-    }
 
     return true;
   }
 
   void Renderer::Shutdown() {
+    // Destroy the surface
     vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
     // destroy the logical device
     vkDestroyDevice(m_Device, nullptr);
@@ -218,8 +227,15 @@ namespace octal {
     vkGetPhysicalDeviceQueueFamilyProperties(dev, &queueCount, queueFamilies.data());
 
     for (u32 i = 0; i < queueCount; ++i) {
+      // check for graphics support
       if (queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
         indices.graphics = i;
+      }
+      // check for presentation support
+      VkBool32 presentSupport = false;
+      vkGetPhysicalDeviceSurfaceSupportKHR(dev, i, m_Surface, &presentSupport);
+      if (presentSupport) {
+        indices.present = i;
       }
     }
 
@@ -227,15 +243,22 @@ namespace octal {
   }
 
   bool Renderer::createLogicalDevice() {
-    // creates the device queue
-    VkDeviceQueueCreateInfo queueCreate{};
-    queueCreate.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    // set graphics index
-    queueCreate.queueFamilyIndex = m_QIndices.graphics.value();
-    queueCreate.queueCount = 1;
-    // make this the highest priority
+    // creates the device queues
+    std::vector<VkDeviceQueueCreateInfo> queueCreateInfos{};
+    // create a set of queue indices. by using a set we insure that we don't repeat an index
+    std::set<u32> uniqueQueueFam = {m_QIndices.graphics.value(), m_QIndices.present.value()};
     float priority = 1.f;
-    queueCreate.pQueuePriorities = &priority;
+    for (u32 qf : uniqueQueueFam) {
+      VkDeviceQueueCreateInfo queueCreate{};
+      queueCreate.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+      // set graphics index
+      queueCreate.queueFamilyIndex = qf;
+      queueCreate.queueCount = 1;
+      // make this the highest priority
+      queueCreate.pQueuePriorities = &priority;
+      // add it to our creates
+      queueCreateInfos.push_back(queueCreate);
+    }
 
     // device features we want
     // don't need to do anything with it yet
@@ -244,8 +267,8 @@ namespace octal {
     // create the device
     VkDeviceCreateInfo devCreate{};
     devCreate.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    devCreate.pQueueCreateInfos = &queueCreate;
-    devCreate.queueCreateInfoCount = 1;
+    devCreate.pQueueCreateInfos = queueCreateInfos.data();
+    devCreate.queueCreateInfoCount = queueCreateInfos.size();
     devCreate.pEnabledFeatures = &features;
     // no extensions for now
     devCreate.enabledExtensionCount = 0;

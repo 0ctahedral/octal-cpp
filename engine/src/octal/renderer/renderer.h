@@ -8,7 +8,7 @@ namespace octal {
   /// Struct for storing QueueFamilies
   struct QueueFamilyIndices {
     std::optional<u32> graphics;
-    std::optional<u32> present = 10;
+    std::optional<u32> present;
     bool isComplete() {
       return graphics.has_value() && present.has_value();
     }
@@ -31,6 +31,9 @@ namespace octal {
 
     /// Graphics queue for our device
     VkQueue m_GraphicsQ;
+
+    /// Presentaion queue for our device
+    VkQueue m_PresentQ;
 
     /// Indices of the queues on the device
     QueueFamilyIndices m_QIndices;
