@@ -14,6 +14,14 @@ namespace octal {
     }
   };
 
+  /*
+  struct SwapchainDetails {
+    VkSurfaceCapabilitiesKHR capabilities;
+    std::vector<VkSurfaceFormatKHR> formats;
+    std::vector<VkPresentModeKHR> modes;
+  };
+  */
+
   //TODO: Pimpl method or whatever
   /// A renderer. duh
   class Renderer {
@@ -88,6 +96,10 @@ namespace octal {
       /// Create the surface
       bool createSurface();
 
+      /// Get what the swapchain supports
+      /// @param dev device we are querying on
+      /// @param surface surface we are querying on
+      void querySwapchainSupport(VkPhysicalDevice dev, VkSurfaceKHR surface);
   };
 
 }

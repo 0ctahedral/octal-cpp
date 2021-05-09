@@ -38,6 +38,8 @@ namespace octal {
     vkGetDeviceQueue(m_Device, m_QIndices.graphics.value(), 0, &m_GraphicsQ);
     vkGetDeviceQueue(m_Device, m_QIndices.present.value(), 0, &m_PresentQ);
 
+    // tell us about the surface and device capabilities
+    querySwapchainSupport(m_PhysicalDev, m_Surface);
 
 
     return true;
@@ -313,6 +315,33 @@ namespace octal {
     create.window = ls->window;
 
     return vkCreateXcbSurfaceKHR(m_Instance, &create, nullptr, &m_Surface) == VK_SUCCESS;
+  }
+
+
+  void Renderer::querySwapchainSupport(VkPhysicalDevice dev, VkSurfaceKHR surface) {
+    // get capabilities
+    VkSurfaceCapabilitiesKHR capabilities;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(dev, surface, &capabilities);
+    // log them
+    /*
+    INFO("Surface capabilities:\nw: %d h:%d\nmax images: %d",
+        capabilities.currentExtent.width,
+        capabilities.currentExtent.height,
+        capabilities.maxImageCount)
+        */
+
+    // get formats
+    u32 formatCount = 0;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(dev, surface, &formatCount, nullptr);
+    std::vector<VkSurfaceFormatKHR> formats(formatCount);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(dev, surface, &formatCount, formats.data());
+
+    // get modes
+    u32 modeCount = 0;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(dev, surface, &formatCount, nullptr);
+    std::vector<VkPresentModeKHR> modes(modeCount);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(dev, surface, &formatCount, modes.data());
+
   }
 }
 
