@@ -43,10 +43,19 @@ namespace octal {
       return false;
     }
 
+    if (!createImageViews()) {
+      FATAL("Failed to create imageviews");
+      return false;
+    }
+
     return true;
   }
 
   void Renderer::Shutdown() {
+    // destroy all the image views
+    for (auto imageView : m_SwapChainImageViews) {
+      vkDestroyImageView(m_Device, imageView, nullptr);
+    }
     // destroy the swapchain
     vkDestroySwapchainKHR(m_Device, m_SwapChain, nullptr);
     // Destroy the surface
@@ -354,6 +363,10 @@ namespace octal {
     create.imageArrayLayers = 1;
     create.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
+    // set member variables too
+    m_scFormat = format.format;
+    m_scExtent = extent;
+
     u32 indices[] = {m_QIndices.graphics.value(), m_QIndices.present.value()};
 
     // if the graphics and present queues are different
@@ -377,7 +390,17 @@ namespace octal {
     create.clipped = VK_TRUE;
     create.oldSwapchain = VK_NULL_HANDLE;
 
-    return vkCreateSwapchainKHR(m_Device, &create, nullptr, &m_SwapChain) == VK_SUCCESS;
+    // get the images
+
+    if (vkCreateSwapchainKHR(m_Device, &create, nullptr, &m_SwapChain) != VK_SUCCESS) {
+      return false;
+    }
+
+    vkGetSwapchainImagesKHR(m_Device, m_SwapChain, &imageCount, nullptr);
+    m_SwapChainImages.resize(imageCount);
+    vkGetSwapchainImagesKHR(m_Device, m_SwapChain, &imageCount, m_SwapChainImages.data());
+
+    return true;
   }
 
   SwapchainDetails Renderer::querySwapchainSupport(VkPhysicalDevice dev, VkSurfaceKHR surface) {
@@ -434,6 +457,42 @@ namespace octal {
         std::min(capabilities.maxImageExtent.height, actual.height));
 
     return actual;
+  }
+
+  bool Renderer::createImageViews() {
+    // resize the image view vector to include however many images are in the swapchain
+    m_SwapChainImageViews.resize(m_SwapChainImages.size());
+
+    // create a new image view for each image
+    for (int i = 0; i < m_SwapChainImages.size(); ++i) {
+      VkImageViewCreateInfo create{};
+      create.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+      create.image = m_SwapChainImages[i];
+      create.viewType = VK_IMAGE_VIEW_TYPE_2D;
+      create.format = m_scFormat;
+
+      // leave colors normal order
+      create.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+      create.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+      create.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+      create.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+      // define purpose and region
+      // here we just want to copy color
+      create.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      // we only need one level since our sc has only one
+      create.subresourceRange.baseMipLevel = 0;
+      create.subresourceRange.levelCount = 1;
+      create.subresourceRange.baseArrayLayer = 0;
+      create.subresourceRange.layerCount = 1;
+
+      if (vkCreateImageView(m_Device, &create, nullptr, &m_SwapChainImageViews[i]) != VK_SUCCESS) {
+        ERROR("Could not create image %d", i);
+        return false;
+      }
+    }
+
+    return true;
   }
 }
 

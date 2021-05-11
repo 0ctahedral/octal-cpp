@@ -54,6 +54,17 @@ namespace octal {
     /// The swapchain we are presenting with
     VkSwapchainKHR m_SwapChain;
 
+    /// The swapchain's image format
+    VkFormat m_scFormat;
+    // the swapchain's exten
+    VkExtent2D m_scExtent;
+
+    /// swapchain images
+    std::vector<VkImage> m_SwapChainImages;
+    
+    /// Our views into the swapchain
+    std::vector<VkImageView> m_SwapChainImageViews;
+
     public:
       /// Constructor
       Renderer() {};
@@ -101,6 +112,10 @@ namespace octal {
       /// Create the swapchain
       /// @return if creating the swapchain was successful
       bool createSwapChain();
+
+      /// Creates the image views into our swapchain
+      /// @return if image view creation was successful
+      bool createImageViews();
 
       /// Get what the swapchain supports
       /// @param dev device we are querying on
