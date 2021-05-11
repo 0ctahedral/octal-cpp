@@ -14,13 +14,11 @@ namespace octal {
     }
   };
 
-  /*
   struct SwapchainDetails {
     VkSurfaceCapabilitiesKHR capabilities;
     std::vector<VkSurfaceFormatKHR> formats;
     std::vector<VkPresentModeKHR> modes;
   };
-  */
 
   //TODO: Pimpl method or whatever
   /// A renderer. duh
@@ -52,6 +50,9 @@ namespace octal {
 
     /// The surface we are rendering to
     VkSurfaceKHR m_Surface;
+
+    /// The swapchain we are presenting with
+    VkSwapchainKHR m_SwapChain;
 
     public:
       /// Constructor
@@ -94,12 +95,22 @@ namespace octal {
       QueueFamilyIndices findQueueFamilies(VkPhysicalDevice dev);
 
       /// Create the surface
+      /// @return if creating the surface was successful
       bool createSurface();
+
+      /// Create the swapchain
+      /// @return if creating the swapchain was successful
+      bool createSwapChain();
 
       /// Get what the swapchain supports
       /// @param dev device we are querying on
       /// @param surface surface we are querying on
-      void querySwapchainSupport(VkPhysicalDevice dev, VkSurfaceKHR surface);
+      SwapchainDetails querySwapchainSupport(VkPhysicalDevice dev, VkSurfaceKHR surface);
+
+      /// Helper function
+      VkPresentModeKHR chooseMode(const std::vector<VkPresentModeKHR>& modes);
+      VkSurfaceFormatKHR chooseFormat(const std::vector<VkSurfaceFormatKHR>& formats);
+      VkExtent2D chooseExtent(const VkSurfaceCapabilitiesKHR& capabilities);
   };
 
 }

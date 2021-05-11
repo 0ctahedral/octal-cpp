@@ -38,14 +38,17 @@ namespace octal {
     vkGetDeviceQueue(m_Device, m_QIndices.graphics.value(), 0, &m_GraphicsQ);
     vkGetDeviceQueue(m_Device, m_QIndices.present.value(), 0, &m_PresentQ);
 
-    // tell us about the surface and device capabilities
-    querySwapchainSupport(m_PhysicalDev, m_Surface);
-
+    if (!createSwapChain()) {
+      FATAL("Failed to create swapchain");
+      return false;
+    }
 
     return true;
   }
 
   void Renderer::Shutdown() {
+    // destroy the swapchain
+    vkDestroySwapchainKHR(m_Device, m_SwapChain, nullptr);
     // Destroy the surface
     vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
     // destroy the logical device
@@ -317,31 +320,120 @@ namespace octal {
     return vkCreateXcbSurfaceKHR(m_Instance, &create, nullptr, &m_Surface) == VK_SUCCESS;
   }
 
+  bool Renderer::createSwapChain() {
+    // tell us about the surface and device capabilities
+    SwapchainDetails details = querySwapchainSupport(m_PhysicalDev, m_Surface);
+    if (details.formats.size() == 0 || details.modes.size() == 0) {
+      ERROR("Not enough formats or modes:\nformats: %d, modes: %d", details.formats.size(), details.modes.size());
+      return false;
+    }
 
-  void Renderer::querySwapchainSupport(VkPhysicalDevice dev, VkSurfaceKHR surface) {
+    // get the best format
+    auto format = chooseFormat(details.formats);
+    // get the best mode
+    auto mode = chooseMode(details.modes);
+    // get extents setup
+    auto extent = chooseExtent(details.capabilities);
+
+    // create swapchain
+    // always have at least one more image than the minimum
+    u32 imageCount = details.capabilities.minImageCount + 1;
+
+    // set the image count to max iff we exceed it
+    if (details.capabilities.maxImageCount > 0 && imageCount > details.capabilities.maxImageCount) {
+      imageCount = details.capabilities.maxImageCount;
+    }
+
+    VkSwapchainCreateInfoKHR create{};
+    create.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    create.surface = m_Surface;
+    create.minImageCount = imageCount;
+    create.imageFormat = format.format;
+    create.imageColorSpace = format.colorSpace;
+    create.imageExtent = extent;
+    create.imageArrayLayers = 1;
+    create.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    u32 indices[] = {m_QIndices.graphics.value(), m_QIndices.present.value()};
+
+    // if the graphics and present queues are different
+    if (m_QIndices.graphics != m_QIndices.present) {
+      create.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+      create.queueFamilyIndexCount = 2;
+      create.pQueueFamilyIndices = indices;
+    } else {
+      create.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+      create.queueFamilyIndexCount = 0;
+      create.pQueueFamilyIndices = nullptr;
+    }
+
+    // keep transform the same
+    create.preTransform = details.capabilities.currentTransform;
+    // ignore alpha rn
+    create.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+
+    create.presentMode = mode;
+    // we don't care about pixels that are covered by another window
+    create.clipped = VK_TRUE;
+    create.oldSwapchain = VK_NULL_HANDLE;
+
+    return vkCreateSwapchainKHR(m_Device, &create, nullptr, &m_SwapChain) == VK_SUCCESS;
+  }
+
+  SwapchainDetails Renderer::querySwapchainSupport(VkPhysicalDevice dev, VkSurfaceKHR surface) {
+    SwapchainDetails ret;
     // get capabilities
-    VkSurfaceCapabilitiesKHR capabilities;
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(dev, surface, &capabilities);
-    // log them
-    /*
-    INFO("Surface capabilities:\nw: %d h:%d\nmax images: %d",
-        capabilities.currentExtent.width,
-        capabilities.currentExtent.height,
-        capabilities.maxImageCount)
-        */
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(dev, surface, &ret.capabilities);
 
     // get formats
     u32 formatCount = 0;
     vkGetPhysicalDeviceSurfaceFormatsKHR(dev, surface, &formatCount, nullptr);
-    std::vector<VkSurfaceFormatKHR> formats(formatCount);
-    vkGetPhysicalDeviceSurfaceFormatsKHR(dev, surface, &formatCount, formats.data());
+    ret.formats.resize(formatCount);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(dev, surface, &formatCount, ret.formats.data());
 
     // get modes
     u32 modeCount = 0;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(dev, surface, &formatCount, nullptr);
-    std::vector<VkPresentModeKHR> modes(modeCount);
-    vkGetPhysicalDeviceSurfacePresentModesKHR(dev, surface, &formatCount, modes.data());
+    vkGetPhysicalDeviceSurfacePresentModesKHR(dev, surface, &modeCount, nullptr);
+    ret.modes.resize(modeCount);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(dev, surface, &modeCount, ret.modes.data());
 
+    return ret;
+  }
+
+  VkPresentModeKHR Renderer::chooseMode(const std::vector<VkPresentModeKHR>& modes) {
+    for (const auto& m : modes) {
+      if (m == VK_PRESENT_MODE_MAILBOX_KHR)
+        return m;
+    }
+
+    // fallback to the only one that is guranteed
+    return VK_PRESENT_MODE_FIFO_KHR;
+  }
+
+  VkSurfaceFormatKHR Renderer::chooseFormat(const std::vector<VkSurfaceFormatKHR>& formats) {
+    // format:
+    for (const auto& f: formats) {
+      if (f.format == VK_FORMAT_B8G8R8A8_SRGB && f.colorSpace == VK_COLORSPACE_SRGB_NONLINEAR_KHR)
+         return f;
+    }
+
+    // return first one if we cannot find ideal
+    return formats[0];
+  }
+
+  VkExtent2D Renderer::chooseExtent(const VkSurfaceCapabilitiesKHR& capabilities) {
+    // if it has a normal extent then just do it
+    if (capabilities.currentExtent.width != UINT32_MAX)
+      return capabilities.currentExtent;
+
+    VkExtent2D actual = {1920, 1080};
+    // get the best extent we can
+    actual.width = std::max(capabilities.minImageExtent.width,
+        std::min(capabilities.maxImageExtent.width, actual.width));
+    actual.height = std::max(capabilities.minImageExtent.height,
+        std::min(capabilities.maxImageExtent.height, actual.height));
+
+    return actual;
   }
 }
 
