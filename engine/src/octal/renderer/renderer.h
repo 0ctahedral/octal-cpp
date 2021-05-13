@@ -77,6 +77,9 @@ namespace octal {
     /// The actual pipeline!
     VkPipeline m_GraphicsPipeline;
 
+    /// Command pool for sending instructions to the gpu
+    VkCommandPool m_CommandPool;
+
     public:
       /// Constructor
       Renderer() {};
@@ -140,6 +143,10 @@ namespace octal {
       /// Create the framebuffers we need for each image
       /// @returns if we were successful in creating the framebuffers
       bool createFramebuffers();
+
+      /// Create the CommandPool we need for each image
+      /// @returns if we were successful in creating the CommandPool
+      bool createCommandPool();
 
       /// Helper function
 

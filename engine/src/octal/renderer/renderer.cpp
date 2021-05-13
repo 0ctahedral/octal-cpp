@@ -64,10 +64,17 @@ namespace octal {
       return false;
     }
 
+    if (!createCommandPool()) {
+      FATAL("Failed to create the commandpool!");
+      return false;
+    }
+
     return true;
   }
 
   void Renderer::Shutdown() {
+    // destroy the command pool
+    vkDestroyCommandPool(m_Device, m_CommandPool, nullptr);
     // destroy framebuffers
     for (auto fb : m_SwapChainFramebuffers) {
       vkDestroyFramebuffer(m_Device, fb, nullptr);
@@ -744,6 +751,15 @@ namespace octal {
     }
 
     return true;
+  }
+
+  bool Renderer::createCommandPool() {
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.queueFamilyIndex = m_QIndices.graphics.value();
+    poolInfo.flags = 0;
+
+    return vkCreateCommandPool(m_Device, &poolInfo, nullptr, &m_CommandPool) == VK_SUCCESS;
   }
 }
 
