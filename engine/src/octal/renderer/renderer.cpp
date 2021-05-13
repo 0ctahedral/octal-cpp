@@ -69,6 +69,11 @@ namespace octal {
       return false;
     }
 
+    if (!createCommandBuffers()) {
+      FATAL("Failed to create the command buffers!");
+      return false;
+    }
+
     return true;
   }
 
@@ -760,6 +765,19 @@ namespace octal {
     poolInfo.flags = 0;
 
     return vkCreateCommandPool(m_Device, &poolInfo, nullptr, &m_CommandPool) == VK_SUCCESS;
+  }
+
+  bool Renderer::createCommandBuffers() {
+    // resize to the number of framebuffers we have
+    m_CommandBuffers.resize(m_SwapChainFramebuffers.size());
+
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = m_CommandPool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = (u32) m_CommandBuffers.size();
+
+    return vkAllocateCommandBuffers(m_Device, &allocInfo, m_CommandBuffers.data()) == VK_SUCCESS;
   }
 }
 

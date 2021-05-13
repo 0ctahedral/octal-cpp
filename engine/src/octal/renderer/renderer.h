@@ -80,6 +80,9 @@ namespace octal {
     /// Command pool for sending instructions to the gpu
     VkCommandPool m_CommandPool;
 
+    /// The command buffers for each framebuffer we have
+    std::vector<VkCommandBuffer> m_CommandBuffers;
+
     public:
       /// Constructor
       Renderer() {};
@@ -147,6 +150,10 @@ namespace octal {
       /// Create the CommandPool we need for each image
       /// @returns if we were successful in creating the CommandPool
       bool createCommandPool();
+
+      /// Create the CommandBuffers we need for each image
+      /// @returns if we were successful in creating the CommandBuffers
+      bool createCommandBuffers();
 
       /// Helper function
 
