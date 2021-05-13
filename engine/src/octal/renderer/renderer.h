@@ -117,12 +117,16 @@ namespace octal {
       /// @return if image view creation was successful
       bool createImageViews();
 
+      /// Creates the graphics pipeline we will use for rendering
+      /// @returns if we were successful in creating the pipeline
+      bool createGraphicsPipeline();
+
+      /// Helper function
+
       /// Get what the swapchain supports
       /// @param dev device we are querying on
       /// @param surface surface we are querying on
       SwapchainDetails querySwapchainSupport(VkPhysicalDevice dev, VkSurfaceKHR surface);
-
-      /// Helper function
       VkPresentModeKHR chooseMode(const std::vector<VkPresentModeKHR>& modes);
       VkSurfaceFormatKHR chooseFormat(const std::vector<VkSurfaceFormatKHR>& formats);
       VkExtent2D chooseExtent(const VkSurfaceCapabilitiesKHR& capabilities);

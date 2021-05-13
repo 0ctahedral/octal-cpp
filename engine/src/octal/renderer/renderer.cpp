@@ -1,6 +1,7 @@
 #include "platform/platform.h"
 #include "platform/linux/linux.h"
 #include "octal/renderer/renderer.h"
+#include "octal/renderer/shader.h"
 #include "octal/core/logger.h"
 #include <cstring>
 #include <set>
@@ -45,6 +46,11 @@ namespace octal {
 
     if (!createImageViews()) {
       FATAL("Failed to create imageviews");
+      return false;
+    }
+
+    if (!createGraphicsPipeline()) {
+      FATAL("Failed to create graphics pipeline!");
       return false;
     }
 
@@ -491,6 +497,32 @@ namespace octal {
         return false;
       }
     }
+
+    return true;
+  }
+
+  bool Renderer::createGraphicsPipeline() {
+    Shader vert = Shader(m_Device, "./assets/shaders/bin/vert.spv");
+    Shader frag = Shader(m_Device, "./assets/shaders/bin/frag.spv");
+
+    if (!vert.createShaderModule() || !frag.createShaderModule()) {
+      ERROR("Could not create shader modules");
+      return false;
+    }
+
+    VkPipelineShaderStageCreateInfo vertShaderStage{};
+    vertShaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertShaderStage.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vertShaderStage.module = vert.module;
+    vertShaderStage.pName = "main";
+
+    VkPipelineShaderStageCreateInfo fragShaderStage{};
+    fragShaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragShaderStage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragShaderStage.module = frag.module;
+    fragShaderStage.pName = "main";
+    
+    VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStage, fragShaderStage};
 
     return true;
   }
