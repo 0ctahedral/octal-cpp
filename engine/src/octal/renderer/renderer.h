@@ -68,6 +68,9 @@ namespace octal {
     /// Current layout of our pipeline
     VkPipelineLayout m_PipelineLayout;
 
+    /// Our render pass
+    VkRenderPass m_RenderPass;
+
     public:
       /// Constructor
       Renderer() {};
@@ -123,6 +126,9 @@ namespace octal {
       /// Creates the graphics pipeline we will use for rendering
       /// @returns if we were successful in creating the pipeline
       bool createGraphicsPipeline();
+
+      /// Create a render pass to use in our graphics pipeline
+      bool createRenderPass();
 
       /// Helper function
 

@@ -49,6 +49,11 @@ namespace octal {
       return false;
     }
 
+    if (!createRenderPass()) {
+      FATAL("Failed to create render pass!");
+      return false;
+    }
+
     if (!createGraphicsPipeline()) {
       FATAL("Failed to create graphics pipeline!");
       return false;
@@ -639,6 +644,42 @@ namespace octal {
     }
 
     return true;
+  }
+
+  bool Renderer::createRenderPass() {
+    // describe our color only attachment
+    VkAttachmentDescription colorAttachment{};
+    colorAttachment.format = m_SwapChainFormat;
+    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT; // not doing multisampling
+    // clear on load
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    // don't care about the stencil for now
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    // initial is undefined but we want to present to swapchain at the end
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    // reference to the above attachment
+    VkAttachmentReference colorAttachmentRef{};
+    colorAttachmentRef.attachment = 0;
+    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    // create a color subpass
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachmentRef;
+
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+
+    return vkCreateRenderPass(m_Device, &renderPassInfo, nullptr, &m_RenderPass) == VK_SUCCESS;
   }
 }
 
