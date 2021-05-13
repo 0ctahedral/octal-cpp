@@ -59,10 +59,19 @@ namespace octal {
       return false;
     }
 
+    if (!createFramebuffers()) {
+      FATAL("Failed to create framebuffers!");
+      return false;
+    }
+
     return true;
   }
 
   void Renderer::Shutdown() {
+    // destroy framebuffers
+    for (auto fb : m_SwapChainFramebuffers) {
+      vkDestroyFramebuffer(m_Device, fb, nullptr);
+    }
     // destroy the actual pipeline
     vkDestroyPipeline(m_Device, m_GraphicsPipeline, nullptr);
     // destroy the pipeline layout
@@ -708,6 +717,33 @@ namespace octal {
 
     return vkCreateGraphicsPipelines(m_Device, VK_NULL_HANDLE, 
         1, &pipelineInfo, nullptr, &m_GraphicsPipeline) == VK_SUCCESS;
+  }
+
+
+  bool Renderer::createFramebuffers() {
+    // resize the framebuffer vector to that of the image views
+    m_SwapChainFramebuffers.resize(m_SwapChainImageViews.size());
+
+    for (int i = 0; i < m_SwapChainFramebuffers.size(); ++i) {
+
+      VkImageView attachments[] = { m_SwapChainImageViews[i] };
+
+      VkFramebufferCreateInfo framebufferInfo{};
+      framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+      framebufferInfo.renderPass = m_RenderPass;
+      framebufferInfo.attachmentCount = 1;
+      framebufferInfo.pAttachments = attachments;
+      framebufferInfo.width = m_SwapChainExtent.width;
+      framebufferInfo.height = m_SwapChainExtent.height;
+      framebufferInfo.layers = 1;
+
+      if (vkCreateFramebuffer(m_Device, &framebufferInfo, nullptr, &m_SwapChainFramebuffers[i])
+          != VK_SUCCESS) {
+        ERROR("Could not create framebuffer #%d", i);
+      }
+    }
+
+    return true;
   }
 }
 

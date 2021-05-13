@@ -65,6 +65,9 @@ namespace octal {
     /// Our views into the swapchain
     std::vector<VkImageView> m_SwapChainImageViews;
 
+    /// Framebuffers corresponding to the images
+    std::vector<VkFramebuffer> m_SwapChainFramebuffers;
+
     /// Current layout of our pipeline
     VkPipelineLayout m_PipelineLayout;
 
@@ -131,7 +134,12 @@ namespace octal {
       bool createGraphicsPipeline();
 
       /// Create a render pass to use in our graphics pipeline
+      /// @returns if we were successful in creating the render pass
       bool createRenderPass();
+
+      /// Create the framebuffers we need for each image
+      /// @returns if we were successful in creating the framebuffers
+      bool createFramebuffers();
 
       /// Helper function
 
