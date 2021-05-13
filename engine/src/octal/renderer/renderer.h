@@ -55,15 +55,18 @@ namespace octal {
     VkSwapchainKHR m_SwapChain;
 
     /// The swapchain's image format
-    VkFormat m_scFormat;
+    VkFormat m_SwapChainFormat;
     // the swapchain's exten
-    VkExtent2D m_scExtent;
+    VkExtent2D m_SwapChainExtent;
 
     /// swapchain images
     std::vector<VkImage> m_SwapChainImages;
     
     /// Our views into the swapchain
     std::vector<VkImageView> m_SwapChainImageViews;
+
+    /// Current layout of our pipeline
+    VkPipelineLayout m_PipelineLayout;
 
     public:
       /// Constructor

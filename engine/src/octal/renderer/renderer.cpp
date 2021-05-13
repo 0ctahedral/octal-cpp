@@ -58,6 +58,8 @@ namespace octal {
   }
 
   void Renderer::Shutdown() {
+    // destroy the pipeline layout
+    vkDestroyPipelineLayout(m_Device, m_PipelineLayout, nullptr);
     // destroy all the image views
     for (auto imageView : m_SwapChainImageViews) {
       vkDestroyImageView(m_Device, imageView, nullptr);
@@ -370,8 +372,8 @@ namespace octal {
     create.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
     // set member variables too
-    m_scFormat = format.format;
-    m_scExtent = extent;
+    m_SwapChainFormat = format.format;
+    m_SwapChainExtent = extent;
 
     u32 indices[] = {m_QIndices.graphics.value(), m_QIndices.present.value()};
 
@@ -475,7 +477,7 @@ namespace octal {
       create.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
       create.image = m_SwapChainImages[i];
       create.viewType = VK_IMAGE_VIEW_TYPE_2D;
-      create.format = m_scFormat;
+      create.format = m_SwapChainFormat;
 
       // leave colors normal order
       create.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -524,7 +526,7 @@ namespace octal {
     
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStage, fragShaderStage};
 
-    // vertex input (for now there is none)
+    // vertex input (describes the layout of data in a vertex)
     // TODO: add vertex descriptors
     VkPipelineVertexInputStateCreateInfo vertexInput{};
     vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -533,7 +535,108 @@ namespace octal {
     vertexInput.vertexAttributeDescriptionCount = 0;
     vertexInput.pVertexAttributeDescriptions = nullptr;
 
+    // input assembly describes how to use all the vertices
+    VkPipelineInputAssemblyStateCreateInfo inputAsm{};
+    inputAsm.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    inputAsm.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    inputAsm.primitiveRestartEnable = VK_FALSE;
 
+    // create the viewport
+    VkViewport viewport{};
+    viewport.x = 0.f;
+    viewport.y = 0.f;
+    viewport.width = (float) m_SwapChainExtent.width;
+    viewport.height = (float) m_SwapChainExtent.height;
+    viewport.minDepth = 0.f;
+    viewport.minDepth = 1.f;
+
+    // make the scissor the entire framebuffer since we want to show it all
+    VkRect2D scissor{};
+    scissor.offset = {0, 0};
+    scissor.extent = m_SwapChainExtent;
+
+    // combine into viewport state!
+    VkPipelineViewportStateCreateInfo viewportState{};
+    viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportState.viewportCount = 1;
+    viewportState.pViewports = &viewport;
+    viewportState.scissorCount = 1;
+    viewportState.pScissors = &scissor;
+
+    // Rasterizing time!
+    VkPipelineRasterizationStateCreateInfo rasterizer{};
+    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    // discard things that are too far away instead of clamping
+    rasterizer.depthClampEnable = VK_FALSE;
+    rasterizer.rasterizerDiscardEnable = VK_FALSE;
+    rasterizer.polygonMode = VK_POLYGON_MODE_FILL; // TODO: look into using feature which allows lines
+    rasterizer.lineWidth = 1.f;
+    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+
+    // don't fuck with the depth values
+    rasterizer.depthBiasEnable = VK_FALSE;
+    rasterizer.depthBiasConstantFactor = 0.f;
+    rasterizer.depthBiasSlopeFactor = 0.f;
+    rasterizer.depthBiasClamp = 0.f;
+
+    // Don't multisample for now
+    VkPipelineMultisampleStateCreateInfo multisampling{};
+    multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisampling.sampleShadingEnable = VK_FALSE;
+    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multisampling.minSampleShading = 1.0f;
+    multisampling.pSampleMask = nullptr;
+    multisampling.alphaToCoverageEnable = VK_FALSE;
+    multisampling.alphaToOneEnable = VK_FALSE;
+
+    // TODO: add depth and stencil buffers here
+
+    // Color blending (off for now)
+    VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
+    VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
+    VK_COLOR_COMPONENT_A_BIT;
+    colorBlendAttachment.blendEnable = VK_TRUE;
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+    
+    VkPipelineColorBlendStateCreateInfo colorBlending{};
+    colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colorBlending.logicOpEnable = VK_TRUE;
+    colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
+    colorBlending.attachmentCount = 1;
+    colorBlending.pAttachments = &colorBlendAttachment;
+    // we aren't using these so
+    colorBlending.blendConstants[0] = 0.0f; // Optional
+    colorBlending.blendConstants[1] = 0.0f; // Optional
+    colorBlending.blendConstants[2] = 0.0f; // Optional
+    colorBlending.blendConstants[3] = 0.0f; // OptionalVK_BLEND_FACTOR_ZERO
+
+    // dynamic state, we'll keep this blank for now
+    //VkDynamicState dynamicStates[] = { };
+    VkPipelineDynamicStateCreateInfo dynamicState{};
+    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamicState.dynamicStateCount = 0;
+    dynamicState.pDynamicStates = nullptr;
+
+    // pipeline layout
+    VkPipelineLayoutCreateInfo pipelineLayout{};
+    pipelineLayout.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayout.setLayoutCount = 0;
+    pipelineLayout.pSetLayouts = nullptr;
+    // can use these to pass dynamic values
+    pipelineLayout.pushConstantRangeCount = 0;
+    pipelineLayout.pPushConstantRanges = nullptr;
+
+    if (vkCreatePipelineLayout(m_Device, &pipelineLayout, nullptr, &m_PipelineLayout) != VK_SUCCESS) {
+      ERROR("Could not create pipeline layout");
+      return false;
+    }
 
     return true;
   }
