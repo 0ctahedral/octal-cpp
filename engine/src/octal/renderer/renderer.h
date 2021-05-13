@@ -71,6 +71,9 @@ namespace octal {
     /// Our render pass
     VkRenderPass m_RenderPass;
 
+    /// The actual pipeline!
+    VkPipeline m_GraphicsPipeline;
+
     public:
       /// Constructor
       Renderer() {};

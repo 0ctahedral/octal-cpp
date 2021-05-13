@@ -63,8 +63,12 @@ namespace octal {
   }
 
   void Renderer::Shutdown() {
+    // destroy the actual pipeline
+    vkDestroyPipeline(m_Device, m_GraphicsPipeline, nullptr);
     // destroy the pipeline layout
     vkDestroyPipelineLayout(m_Device, m_PipelineLayout, nullptr);
+    // destroy the render pass
+    vkDestroyRenderPass(m_Device, m_RenderPass, nullptr);
     // destroy all the image views
     for (auto imageView : m_SwapChainImageViews) {
       vkDestroyImageView(m_Device, imageView, nullptr);
@@ -508,6 +512,42 @@ namespace octal {
     return true;
   }
 
+  bool Renderer::createRenderPass() {
+    // describe our color only attachment
+    VkAttachmentDescription colorAttachment{};
+    colorAttachment.format = m_SwapChainFormat;
+    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT; // not doing multisampling
+    // clear on load
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    // don't care about the stencil for now
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    // initial is undefined but we want to present to swapchain at the end
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    // reference to the above attachment
+    VkAttachmentReference colorAttachmentRef{};
+    colorAttachmentRef.attachment = 0;
+    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    // create a color subpass
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachmentRef;
+
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+
+    return vkCreateRenderPass(m_Device, &renderPassInfo, nullptr, &m_RenderPass) == VK_SUCCESS;
+  }
+
   bool Renderer::createGraphicsPipeline() {
     Shader vert = Shader(m_Device, "./assets/shaders/bin/vert.spv");
     Shader frag = Shader(m_Device, "./assets/shaders/bin/frag.spv");
@@ -643,43 +683,31 @@ namespace octal {
       return false;
     }
 
-    return true;
-  }
+    // create the pipeline
+    VkGraphicsPipelineCreateInfo pipelineInfo{};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    // add shaders
+    pipelineInfo.stageCount = 2;
+    pipelineInfo.pStages = shaderStages;
 
-  bool Renderer::createRenderPass() {
-    // describe our color only attachment
-    VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = m_SwapChainFormat;
-    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT; // not doing multisampling
-    // clear on load
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    // don't care about the stencil for now
-    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    // initial is undefined but we want to present to swapchain at the end
-    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    pipelineInfo.pVertexInputState    = &vertexInput;
+    pipelineInfo.pInputAssemblyState  = &inputAsm;
+    pipelineInfo.pViewportState       = &viewportState;
+    pipelineInfo.pRasterizationState  = &rasterizer;
+    pipelineInfo.pMultisampleState    = &multisampling;
+    pipelineInfo.pDepthStencilState   = nullptr;
+    pipelineInfo.pColorBlendState     = &colorBlending;
+    pipelineInfo.pDynamicState        = nullptr;
 
-    // reference to the above attachment
-    VkAttachmentReference colorAttachmentRef{};
-    colorAttachmentRef.attachment = 0;
-    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    pipelineInfo.layout = m_PipelineLayout;
+    pipelineInfo.renderPass = m_RenderPass;
+    pipelineInfo.subpass = 0;
 
-    // create a color subpass
-    VkSubpassDescription subpass{};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &colorAttachmentRef;
+    pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+    pipelineInfo.basePipelineIndex = -1;
 
-    VkRenderPassCreateInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = 1;
-    renderPassInfo.pAttachments = &colorAttachment;
-    renderPassInfo.subpassCount = 1;
-    renderPassInfo.pSubpasses = &subpass;
-
-    return vkCreateRenderPass(m_Device, &renderPassInfo, nullptr, &m_RenderPass) == VK_SUCCESS;
+    return vkCreateGraphicsPipelines(m_Device, VK_NULL_HANDLE, 
+        1, &pipelineInfo, nullptr, &m_GraphicsPipeline) == VK_SUCCESS;
   }
 }
 
