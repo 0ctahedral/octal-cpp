@@ -73,11 +73,19 @@ namespace octal {
       FATAL("Failed to create the command buffers!");
       return false;
     }
+
+    if (!createSemaphores()) {
+      FATAL("Failed to create the semaphores!");
+      return false;
+    }
     
     return true;
   }
 
   void Renderer::Shutdown() {
+    // destroy the semaphores
+    vkDestroySemaphore(m_Device, m_ImgAvailableSem, nullptr);
+    vkDestroySemaphore(m_Device, m_RenderFinishedSem, nullptr);
     // destroy the command pool
     vkDestroyCommandPool(m_Device, m_CommandPool, nullptr);
     // destroy framebuffers
@@ -111,6 +119,9 @@ namespace octal {
     vkDestroyInstance(m_Instance, nullptr);
   }
 
+  void Renderer::Draw() {
+    
+  }
 
   bool Renderer::hasValidationLayers() {
     u32 layerCount = 0;
@@ -818,6 +829,15 @@ namespace octal {
       }
     }
     return true;
+  }
+
+
+  bool Renderer::createSemaphores() {
+    VkSemaphoreCreateInfo semInfo{};
+    semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    return vkCreateSemaphore(m_Device, &semInfo, nullptr, &m_ImgAvailableSem) == VK_SUCCESS &&
+    vkCreateSemaphore(m_Device, &semInfo, nullptr, &m_RenderFinishedSem) == VK_SUCCESS;
   }
 }
 

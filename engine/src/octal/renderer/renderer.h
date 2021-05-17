@@ -83,6 +83,11 @@ namespace octal {
     /// The command buffers for each framebuffer we have
     std::vector<VkCommandBuffer> m_CommandBuffers;
 
+    /// Semaphore for if an image is available to draw on
+    VkSemaphore m_ImgAvailableSem;
+    /// Semaphore for if a render is done
+    VkSemaphore m_RenderFinishedSem;
+
     public:
       /// Constructor
       Renderer() {};
@@ -94,6 +99,8 @@ namespace octal {
 
       /// Cleans up resources used by the renderer and shuts it down
       void Shutdown();
+
+      void Draw();
 
     private:
       /// Create the instance
@@ -154,6 +161,10 @@ namespace octal {
       /// Create the CommandBuffers we need for each image
       /// @returns if we were successful in creating the CommandBuffers
       bool createCommandBuffers();
+
+      /// Create the Semaphores we need for swaping
+      /// @returns if we were successful in creating the semaphores
+      bool createSemaphores();
 
       /// Helper function
 
