@@ -89,7 +89,7 @@ namespace octal {
     for (int i = 0; i < MAX_CONCURRENT_FRAMES; ++i){
       vkDestroySemaphore(m_Device, m_ImgAvailableSem[i], nullptr);
       vkDestroySemaphore(m_Device, m_RenderFinishedSem[i], nullptr);
-      vkDestroyFence(m_Device, m_Fences[i], nullptr);
+      vkDestroyFence(m_Device, m_ConcurrentFences[i], nullptr);
     }
     // destroy the command pool
     vkDestroyCommandPool(m_Device, m_CommandPool, nullptr);
@@ -126,13 +126,19 @@ namespace octal {
 
   void Renderer::Draw() {
     // wait for fences
-    vkWaitForFences(m_Device, 1, &m_Fences[m_CurrentFrame], VK_TRUE, UINT64_MAX);
-    vkResetFences(m_Device, 1, &m_Fences[m_CurrentFrame]);
+    vkWaitForFences(m_Device, 1, &m_ConcurrentFences[m_CurrentFrame], VK_TRUE, UINT64_MAX);
 
     // get the index of the next image
     u32 imageIndex;
     vkAcquireNextImageKHR(m_Device, m_SwapChain, UINT64_MAX, 
         m_ImgAvailableSem[m_CurrentFrame], VK_NULL_HANDLE, &imageIndex);
+
+    // check that the previous frame is not using this image
+    if (m_ImageFences[imageIndex] != VK_NULL_HANDLE) {
+      vkWaitForFences(m_Device, 1, &m_ImageFences[imageIndex], VK_TRUE, UINT64_MAX);
+    }
+    //
+    m_ImageFences[imageIndex] = m_ConcurrentFences[m_CurrentFrame];
 
     // submit the command buffer
     VkSubmitInfo submitInfo{};
@@ -152,7 +158,9 @@ namespace octal {
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    if (vkQueueSubmit(m_GraphicsQ, 1, &submitInfo, m_Fences[m_CurrentFrame]) != VK_SUCCESS) {
+    vkResetFences(m_Device, 1, &m_ConcurrentFences[m_CurrentFrame]);
+
+    if (vkQueueSubmit(m_GraphicsQ, 1, &submitInfo, m_ConcurrentFences[m_CurrentFrame]) != VK_SUCCESS) {
       ERROR("Failed to submit to the graphics queue");
     }
     
@@ -898,7 +906,9 @@ namespace octal {
   bool Renderer::createSyncObjects() {
     m_ImgAvailableSem.resize(MAX_CONCURRENT_FRAMES);
     m_RenderFinishedSem.resize(MAX_CONCURRENT_FRAMES);
-    m_Fences.resize(MAX_CONCURRENT_FRAMES);
+    m_ConcurrentFences.resize(MAX_CONCURRENT_FRAMES);
+    // resize to all the images
+    m_ImageFences.resize(m_SwapChainImages.size(), VK_NULL_HANDLE);
 
     VkSemaphoreCreateInfo semInfo{};
     semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -910,7 +920,7 @@ namespace octal {
     for (int i = 0; i < MAX_CONCURRENT_FRAMES; ++i) {
       if (vkCreateSemaphore(m_Device, &semInfo, nullptr, &m_ImgAvailableSem[i]) != VK_SUCCESS ||
           vkCreateSemaphore(m_Device, &semInfo, nullptr, &m_RenderFinishedSem[i]) != VK_SUCCESS ||
-          vkCreateFence(m_Device, &fenceInfo, nullptr, &m_Fences[i]) != VK_SUCCESS
+          vkCreateFence(m_Device, &fenceInfo, nullptr, &m_ConcurrentFences[i]) != VK_SUCCESS
           ) {
         ERROR("Could not create semaphore %d", i);
         return false;

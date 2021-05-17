@@ -90,7 +90,9 @@ namespace octal {
     /// Semaphore for if a render is done
     std::vector<VkSemaphore> m_RenderFinishedSem;
     /// Fences for cpu-gpu sync
-    std::vector<VkFence> m_Fences;
+    std::vector<VkFence> m_ConcurrentFences;
+    /// Fences corresponding to the images themselves
+    std::vector<VkFence> m_ImageFences;
     /// Which frame are we rendering?
     u8 m_CurrentFrame{0};
 
