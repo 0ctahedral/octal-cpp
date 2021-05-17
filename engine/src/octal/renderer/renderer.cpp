@@ -83,6 +83,8 @@ namespace octal {
   }
 
   void Renderer::Shutdown() {
+    // wait to destroy anything
+    vkDeviceWaitIdle(m_Device);
     // destroy the semaphores
     vkDestroySemaphore(m_Device, m_ImgAvailableSem, nullptr);
     vkDestroySemaphore(m_Device, m_RenderFinishedSem, nullptr);
@@ -120,7 +122,46 @@ namespace octal {
   }
 
   void Renderer::Draw() {
+    // get the index of the next image
+    u32 imageIndex;
+    vkAcquireNextImageKHR(m_Device, m_SwapChain, UINT64_MAX, 
+        m_ImgAvailableSem, VK_NULL_HANDLE, &imageIndex);
+
+    // submit the command buffer
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+    VkSemaphore waitSemaphores[] = {m_ImgAvailableSem};
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStages;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &m_CommandBuffers[imageIndex];
+
+    // signal that we have finished the frame
+    VkSemaphore signalSemaphores[] = {m_RenderFinishedSem};
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores;
+
+    if (vkQueueSubmit(m_GraphicsQ, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+      ERROR("Failed to submit to the graphics queue");
+    }
     
+    // present when we have finished rendering to that image
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signalSemaphores;
+
+    VkSwapchainKHR swapChains[] = {m_SwapChain};
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapChains;
+    presentInfo.pImageIndices = &imageIndex;
+    presentInfo.pResults = nullptr;
+
+    vkQueuePresentKHR(m_PresentQ, &presentInfo);
   }
 
   bool Renderer::hasValidationLayers() {
@@ -577,6 +618,17 @@ namespace octal {
     renderPassInfo.pAttachments = &colorAttachment;
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
+
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
 
     return vkCreateRenderPass(m_Device, &renderPassInfo, nullptr, &m_RenderPass) == VK_SUCCESS;
   }

@@ -1,17 +1,15 @@
 #include "octal/core/logger.h"
-#include "octal/core/application.h"
-#include "octal/renderer/renderer.h"
 #include "platform/platform.h"
+#include "octal/core/application.h"
 
 namespace octal {
-
+  Renderer renderer;
   Application::Application(Config config) { 
     // set state
     m_State.width = config.width;
     // start up window
     Platform::Init(config.name, config.x, config.y, config.width, config.height);
 
-    Renderer renderer;
     if (!renderer.Init()) {
       FATAL("Could not start vulkan :(");
       Platform::Shutdown();
@@ -27,7 +25,9 @@ namespace octal {
       if (!Platform::Flush()) {
         quit = true;
       }
+      renderer.Draw();
     }
+    renderer.Shutdown();
   }
 
   Application::~Application() {

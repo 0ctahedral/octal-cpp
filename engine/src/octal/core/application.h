@@ -2,6 +2,7 @@
 #include <string>
 #include "octal/defines.h"
 #include "octal/core/layer.h"
+#include "octal/renderer/renderer.h"
 
 namespace octal {
 
