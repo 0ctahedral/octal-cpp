@@ -23,4 +23,4 @@ $(targ): $(obj)
 	clang++ -o $(bin_dir)/$(targ) $(obj_files) $(cflags) $(defines) $(ldflags) 
 
 %.o : %.cpp
-	clang++ -c $< -o $(obj_dir)/$(notdir $@) $(inc) 
+	clang++ -c $< -o $(obj_dir)/$(notdir $@) $(inc) $(cflags)
