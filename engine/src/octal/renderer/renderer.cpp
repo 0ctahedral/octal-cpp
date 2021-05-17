@@ -73,7 +73,7 @@ namespace octal {
       FATAL("Failed to create the command buffers!");
       return false;
     }
-
+    
     return true;
   }
 
@@ -110,6 +110,7 @@ namespace octal {
 
     vkDestroyInstance(m_Instance, nullptr);
   }
+
 
   bool Renderer::hasValidationLayers() {
     u32 layerCount = 0;
@@ -673,7 +674,8 @@ namespace octal {
     
     VkPipelineColorBlendStateCreateInfo colorBlending{};
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colorBlending.logicOpEnable = VK_TRUE;
+    //colorBlending.logicOpEnable = VK_TRUE;
+    colorBlending.logicOpEnable = VK_FALSE;
     colorBlending.logicOp = VK_LOGIC_OP_COPY; // Optional
     colorBlending.attachmentCount = 1;
     colorBlending.pAttachments = &colorBlendAttachment;
@@ -777,7 +779,45 @@ namespace octal {
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocInfo.commandBufferCount = (u32) m_CommandBuffers.size();
 
-    return vkAllocateCommandBuffers(m_Device, &allocInfo, m_CommandBuffers.data()) == VK_SUCCESS;
+    if (vkAllocateCommandBuffers(m_Device, &allocInfo, m_CommandBuffers.data()) != VK_SUCCESS) {
+      ERROR("Failed to begin allocate command buffers");
+      return false;
+    }
+
+    for (int i = 0; i < m_CommandBuffers.size(); ++i) {
+      VkCommandBufferBeginInfo beginInfo{};
+      beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+      beginInfo.flags = 0;
+      beginInfo.pInheritanceInfo = nullptr;
+      if (vkBeginCommandBuffer(m_CommandBuffers[i], &beginInfo) != VK_SUCCESS) {
+        ERROR("Failed to begin command buffer %d", i);
+        return false;
+      }
+      
+      VkRenderPassBeginInfo renderPassInfo{};
+      renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+      renderPassInfo.renderPass = m_RenderPass;
+      renderPassInfo.framebuffer = m_SwapChainFramebuffers[i];
+      renderPassInfo.renderArea.offset = {0,0};
+      renderPassInfo.renderArea.extent = m_SwapChainExtent;
+
+      VkClearValue clearColor = {0.f, 0.f, 0.f, 1.f};
+      renderPassInfo.clearValueCount = 1;
+      renderPassInfo.pClearValues = &clearColor;
+
+      vkCmdBeginRenderPass(m_CommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindPipeline(m_CommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
+        vkCmdDraw(m_CommandBuffers[i], 3, 1, 0, 0);
+
+      vkCmdEndRenderPass(m_CommandBuffers[i]);
+
+      if (vkEndCommandBuffer(m_CommandBuffers[i]) != VK_SUCCESS) {
+        ERROR("failed to record command buffer %d", i);
+        return false;
+      }
+    }
+    return true;
   }
 }
 
