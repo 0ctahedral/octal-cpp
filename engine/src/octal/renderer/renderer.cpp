@@ -74,7 +74,7 @@ namespace octal {
       return false;
     }
 
-    if (!createSemaphores()) {
+    if (!createSyncObjects()) {
       FATAL("Failed to create the semaphores!");
       return false;
     }
@@ -86,8 +86,11 @@ namespace octal {
     // wait to destroy anything
     vkDeviceWaitIdle(m_Device);
     // destroy the semaphores
-    vkDestroySemaphore(m_Device, m_ImgAvailableSem, nullptr);
-    vkDestroySemaphore(m_Device, m_RenderFinishedSem, nullptr);
+    for (int i = 0; i < MAX_CONCURRENT_FRAMES; ++i){
+      vkDestroySemaphore(m_Device, m_ImgAvailableSem[i], nullptr);
+      vkDestroySemaphore(m_Device, m_RenderFinishedSem[i], nullptr);
+      vkDestroyFence(m_Device, m_Fences[i], nullptr);
+    }
     // destroy the command pool
     vkDestroyCommandPool(m_Device, m_CommandPool, nullptr);
     // destroy framebuffers
@@ -122,16 +125,20 @@ namespace octal {
   }
 
   void Renderer::Draw() {
+    // wait for fences
+    vkWaitForFences(m_Device, 1, &m_Fences[m_CurrentFrame], VK_TRUE, UINT64_MAX);
+    vkResetFences(m_Device, 1, &m_Fences[m_CurrentFrame]);
+
     // get the index of the next image
     u32 imageIndex;
     vkAcquireNextImageKHR(m_Device, m_SwapChain, UINT64_MAX, 
-        m_ImgAvailableSem, VK_NULL_HANDLE, &imageIndex);
+        m_ImgAvailableSem[m_CurrentFrame], VK_NULL_HANDLE, &imageIndex);
 
     // submit the command buffer
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-    VkSemaphore waitSemaphores[] = {m_ImgAvailableSem};
+    VkSemaphore waitSemaphores[] = {m_ImgAvailableSem[m_CurrentFrame]};
     VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
 
     submitInfo.waitSemaphoreCount = 1;
@@ -141,11 +148,11 @@ namespace octal {
     submitInfo.pCommandBuffers = &m_CommandBuffers[imageIndex];
 
     // signal that we have finished the frame
-    VkSemaphore signalSemaphores[] = {m_RenderFinishedSem};
+    VkSemaphore signalSemaphores[] = {m_RenderFinishedSem[m_CurrentFrame]};
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
-    if (vkQueueSubmit(m_GraphicsQ, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+    if (vkQueueSubmit(m_GraphicsQ, 1, &submitInfo, m_Fences[m_CurrentFrame]) != VK_SUCCESS) {
       ERROR("Failed to submit to the graphics queue");
     }
     
@@ -161,7 +168,11 @@ namespace octal {
     presentInfo.pImageIndices = &imageIndex;
     presentInfo.pResults = nullptr;
 
-    vkQueuePresentKHR(m_PresentQ, &presentInfo);
+    if (vkQueuePresentKHR(m_PresentQ, &presentInfo) != VK_SUCCESS) {
+      ERROR("Could not present!");
+    }
+
+    m_CurrentFrame = (m_CurrentFrame + 1) % MAX_CONCURRENT_FRAMES;
   }
 
   bool Renderer::hasValidationLayers() {
@@ -884,12 +895,30 @@ namespace octal {
   }
 
 
-  bool Renderer::createSemaphores() {
+  bool Renderer::createSyncObjects() {
+    m_ImgAvailableSem.resize(MAX_CONCURRENT_FRAMES);
+    m_RenderFinishedSem.resize(MAX_CONCURRENT_FRAMES);
+    m_Fences.resize(MAX_CONCURRENT_FRAMES);
+
     VkSemaphoreCreateInfo semInfo{};
     semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-    return vkCreateSemaphore(m_Device, &semInfo, nullptr, &m_ImgAvailableSem) == VK_SUCCESS &&
-    vkCreateSemaphore(m_Device, &semInfo, nullptr, &m_RenderFinishedSem) == VK_SUCCESS;
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    for (int i = 0; i < MAX_CONCURRENT_FRAMES; ++i) {
+      if (vkCreateSemaphore(m_Device, &semInfo, nullptr, &m_ImgAvailableSem[i]) != VK_SUCCESS ||
+          vkCreateSemaphore(m_Device, &semInfo, nullptr, &m_RenderFinishedSem[i]) != VK_SUCCESS ||
+          vkCreateFence(m_Device, &fenceInfo, nullptr, &m_Fences[i]) != VK_SUCCESS
+          ) {
+        ERROR("Could not create semaphore %d", i);
+        return false;
+      }
+
+    }
+
+    return true;
   }
 }
 

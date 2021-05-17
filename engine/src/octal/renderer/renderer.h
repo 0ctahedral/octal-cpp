@@ -83,10 +83,16 @@ namespace octal {
     /// The command buffers for each framebuffer we have
     std::vector<VkCommandBuffer> m_CommandBuffers;
 
+    /// How many frames we will allow to be worked on at once
+    const int MAX_CONCURRENT_FRAMES = 2;
     /// Semaphore for if an image is available to draw on
-    VkSemaphore m_ImgAvailableSem;
+    std::vector<VkSemaphore> m_ImgAvailableSem;
     /// Semaphore for if a render is done
-    VkSemaphore m_RenderFinishedSem;
+    std::vector<VkSemaphore> m_RenderFinishedSem;
+    /// Fences for cpu-gpu sync
+    std::vector<VkFence> m_Fences;
+    /// Which frame are we rendering?
+    u8 m_CurrentFrame{0};
 
     public:
       /// Constructor
@@ -164,7 +170,7 @@ namespace octal {
 
       /// Create the Semaphores we need for swaping
       /// @returns if we were successful in creating the semaphores
-      bool createSemaphores();
+      bool createSyncObjects();
 
       /// Helper function
 
